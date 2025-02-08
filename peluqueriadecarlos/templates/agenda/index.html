@@ -1,0 +1,337 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peluquería Estilo Moderno - Sistema de Citas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'agenda/css/estilos.css' %}">
+    <link rel="manifest" href="{% static 'agenda/manifest.json' %}">
+
+</head>
+<body>
+
+
+
+    <div class="layout">
+        <button id="sidebarCollapse" class="sidebar-toggle">☰</button>
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>Panel de Control</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="" id="clientesLink"><i class="fas fa-pencil-alt"></i>Agendar Citas</a></li>
+                <li><a href="{% url 'citas' %}" class="active"><i class="fas fa-calendar-alt"></i> Cistas Agendas </a></li>
+                <li><a href="{% url 'iniciosesion' %}" class="active"><i class="fas fa-sign-in-alt"></i>Login</a></li>
+            </ul>
+        </nav>
+
+        
+
+
+
+
+    <div class="container">
+        <h1>Carlos Barber Shop</h1>
+        <div class="reservation-system">
+            <div class="reservation-form">
+                <h2>Reservar Cita</h2>
+                <form id="citaForm" method="POST" action="{% url 'index' %}">
+                    {% csrf_token %}
+                    <label for="nombre">Nombre:</label>
+                    <input type="text" id="nombre" name="nombre" required>
+                
+                    <label for="telefono">Teléfono:</label>
+                    <input type="tel" id="telefono" name="telefono" required pattern="[0-9]{10}" placeholder="Ej: 1234567890">
+
+                    <label for="fecha">Fecha:</label>
+<input type="date" id="fecha" name="fecha" required data-fechas="{{ fechas_no_disponibles|join:',' }}">
+<span id="fecha-marcada" style="color: red; font-weight: bold;"></span>
+
+                
+                    <label for="hora">Hora:</label>
+<select id="hora" name="hora" required>
+    <option value="">Selecciona una horas</option>
+    {% for hora in horas_no_disponibles %}
+        <option value="{{ hora|time:'h:i A' }}">{{ hora|time:'h:i A' }}</option>
+    {% endfor %}
+</select>
+
+                    
+                    <button type="submit">Reservar Cita45</button>
+                </form>
+                
+            </div>
+            <div class="appointments-list">
+                <h2>Citas Programadas</h2>
+                <div class="table-responsive">
+                    <table class="citas-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nombre</th>
+                                <th>Fecha</th>
+                                <th>Hora</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="citasContainer">
+                            {% for cita in citas %}
+                            <tr>
+                                <td>{{ cita.turno }}</td> <!-- Turno asignado -->
+                                <td>{{ cita.nombre }}</td>
+                                <td>{{ cita.fecha }}</td>
+                                <td>{{ cita.hora }}</td>
+                                <td>{{ cita.estado }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        
+                        
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+ 
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById('citaForm');
+            const citasContainer = document.getElementById('citasContainer');
+            const fechaInput = document.getElementById("fecha");
+            const fechaMarcada = document.getElementById("fecha-marcada");
+    
+            // Obtener las fechas no disponibles desde el atributo data
+            const fechasNoDisponibles = fechaInput.dataset.fechas ? fechaInput.dataset.fechas.split(',') : [];
+    
+            // Convertir hora del formato 12 horas al formato 24 horas
+            function convertirHoraA24(hora12) {
+                const [hora, periodo] = hora12.split(' ');
+                let [horas, minutos] = hora.split(':').map(Number);
+    
+                if (periodo === 'PM' && horas !== 12) {
+                    horas += 12;
+                } else if (periodo === 'AM' && horas === 12) {
+                    horas = 0;
+                }
+    
+                return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:00`;
+            }
+    
+            // Actualizar las citas en la tabla
+            function actualizarCitas() {
+                fetch('{% url "ver_citas" %}')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Error al obtener las citas.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        citasContainer.innerHTML = ''; // Limpiar contenido anterior
+                        data.forEach(cita => {
+                            const fila = document.createElement('tr');
+                            
+                            // Asignar clase según el estado
+                            switch(cita.estado.toLowerCase()) {
+                                case 'pendiente':
+                                    fila.classList.add('estado-pendiente');
+                                    break;
+                                case 'completado':
+                                    fila.classList.add('estado-completado');
+                                    break;
+                                case 'proceso':
+                                    fila.classList.add('estado-proceso');
+                                    break;
+                            }
+                            
+                            fila.innerHTML = `
+                                <td>${cita.turno}</td>
+                                <td>${cita.nombre}</td>
+                                <td>${cita.fecha}</td>
+                                <td>${cita.hora}</td>
+                                <td>${cita.estado}</td>
+                            `;
+                            citasContainer.appendChild(fila);
+                        });
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        alert('No se pudieron cargar las citas. Inténtalo nuevamente.');
+                    });
+            }
+    
+            // Manejar el envío del formulario
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+    
+                const nombre = document.getElementById('nombre').value.trim();
+                const telefono = document.getElementById('telefono').value.trim();
+                const fecha = fechaInput.value;
+                const horaSeleccionada = document.getElementById('hora').value;
+    
+                // Verificar si la fecha está marcada como no disponible
+                if (fechasNoDisponibles.includes(fecha)) {
+                    alert("Esta fecha no está disponible. Por favor, selecciona otra.");
+                    return;
+                }
+    
+                const hora = convertirHoraA24(horaSeleccionada);
+    
+                // Validar que los campos estén completos
+                if (nombre && telefono && fecha && hora) {
+                    const formData = {
+                        nombre,
+                        telefono,
+                        fecha,
+                        hora,
+                        estado: 'Pendiente' // Estado por defecto al crear una cita
+                    };
+    
+                    fetch('{% url "guardar_cita" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                    .then(response => response.json().then(data => ({ status: response.status, body: data })))
+                    .then(({ status, body }) => {
+                        if (status === 200 && body.success) {
+                            alert(`Cita creada exitosamente. Turno asignado: ${body.turno}`);
+                            actualizarCitas();
+                            form.reset();
+                        } else if (status === 400 && body.error) {
+                            // Mostrar alerta si la hora ya está ocupada
+                            alert(body.error);
+                        } else {
+                            throw new Error(body.error || "Error desconocido al guardar la cita.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        alert(error.message || "Ha ocurrido un error. Inténtalo nuevamente.");
+                    });
+                } else {
+                    alert('Por favor, completa todos los campos antes de enviar.');
+                }
+            });
+    
+            // Actualizar la tabla de citas al cargar la página
+            actualizarCitas();
+    
+            // Manejar cambios en el campo de fecha
+            fechaInput.addEventListener("change", () => {
+                const fechaSeleccionada = fechaInput.value;
+    
+                if (fechasNoDisponibles.includes(fechaSeleccionada)) {
+                    fechaMarcada.textContent = "X";
+                    fechaMarcada.style.color = "red";
+                } else {
+                    fechaMarcada.textContent = "";
+                }
+            });
+    
+            // Código del sidebar con corrección del cierre accidental en móviles
+            const sidebar = document.getElementById('sidebar');
+            const sidebarCollapse = document.getElementById('sidebarCollapse');
+            const mainContent = document.querySelector('.main-content');
+    
+            sidebarCollapse.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                mainContent.classList.toggle('expanded');
+            });
+    
+            // Cerrar sidebar en dispositivos móviles al hacer clic fuera
+            let debounceTimeout;
+            document.addEventListener('click', function(event) {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => {
+                    const isClickInside =
+                        sidebar.contains(event.target) ||
+                        sidebarCollapse.contains(event.target) ||
+                        event.target.closest("#citaForm") || // Excluir formulario
+                        event.target.closest("#fecha") || // Excluir selector de fecha
+                        event.target.closest("#modal"); // Excluir modal
+    
+                    if (!isClickInside && window.innerWidth <= 768 && sidebar.classList.contains('active')) {
+                        sidebar.classList.remove('active');
+                        mainContent.classList.remove('expanded');
+                    }
+                }, 100); // 100ms de espera antes de ejecutar
+            });
+        });
+
+
+
+
+
+
+
+
+
+
+
+        let deferredPrompt;
+
+window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();  // Evita la instalación automática
+    deferredPrompt = event;  // Guarda el evento para usarlo después
+
+    const installButton = document.getElementById("installButton");
+    if (installButton) {
+        installButton.style.display = "block"; // Muestra el botón de instalación
+        installButton.addEventListener("click", () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt(); // Muestra el mensaje de instalación
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === "accepted") {
+                        console.log("El usuario aceptó la instalación");
+                    } else {
+                        console.log("El usuario canceló la instalación");
+                    }
+                    deferredPrompt = null; // Se limpia la variable
+                });
+            }
+        });
+    }
+});
+
+// Detectar si la PWA ya está instalada
+window.addEventListener("appinstalled", () => {
+    console.log("✅ PWA instalada correctamente");
+    const installButton = document.getElementById("installButton");
+    if (installButton) {
+        installButton.style.display = "none"; // Ocultar el botón tras la instalación
+    }
+});
+
+
+
+
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register("{% static 'agenda/sw.js' %}")
+            .then(registration => {
+                console.log('✅ Service Worker registrado correctamente:', registration);
+            })
+            .catch(error => {
+                console.log('❌ Error al registrar el Service Worker:', error);
+            });
+    });
+}
+
+
+    </script>
+    
+    
+    
+</body>
+</html>

@@ -1,0 +1,518 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modificar Horario - Peluquería Estilo Moderno</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(to right, #0026ff, #0026ff);
+            color: #333;
+        }
+
+        .layout {
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all 0.3s;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background-color:rgb(0, 0, 0);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h3 {
+            margin: 0;
+            margin-left: 30px;
+            font-size: 1.1em;
+        }
+
+        .sidebar-menu {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar-menu li a {
+            display: block;
+            padding: 15px 20px;
+            color: #fff;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .sidebar-menu li a:hover, .sidebar-menu li a.active {
+            background-color: #3c1172;
+        }
+
+        .content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #4A148C;
+            text-align: center;
+            padding: 20px 0;
+            font-size: 32px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #4A148C;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input[type="time"],
+        input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .btn {
+            background-color: #4A148C;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background-color: #3c1172;
+        }
+
+        .horas-list {
+            margin-top: 20px;
+        }
+
+        .hora-item {
+            background-color: #ff6b6b;
+            color: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .fecha-item {
+            background-color: #ff6b6b;
+            color: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+
+
+        .fechas-list {
+            margin-top: 20px;
+        }
+
+        .eliminar-hora,
+        .eliminar-fecha {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            
+        }
+
+        .eliminar-hora:hover,
+        .eliminar-fecha:hover {
+            background-color: gray;
+        }
+
+        #mensaje {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .mensaje-exito {
+            color: green;
+            font-weight: bold;
+        }
+        
+        .mensaje-error {
+            color: red;
+            font-weight: bold;
+        }
+
+
+
+
+        
+/* Responsivo */
+@media (max-width: 768px) {
+    .sidebar {
+      width: 0;
+      overflow: hidden;
+    }
+  
+    .sidebar.active {
+      width: 250px;
+    }
+  
+    .content {
+      margin-left: 0;
+      padding: 15px;
+    }
+  
+    .sidebar-toggle {
+      display: block;
+      position: fixed;
+      top: 15px;
+      left: 11px;
+      background: #4a148c;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 1100;
+    }
+
+
+    
+  
+    h1 {
+      font-size: 1.8rem;
+    }
+  
+    #adminTable {
+      display: block;
+      overflow-x: auto;
+    }
+  
+    #adminTable th,
+    #adminTable td {
+      padding: 10px 8px;
+      font-size: 12px;
+    }
+  
+    .modal-content {
+      width: 90%;
+      margin: 10% auto;
+      padding: 15px;
+    }
+  }
+  
+        
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <button id="sidebarCollapse" class="sidebar-toggle">☰</button>
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>Panel de Control</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="" id="clientesLink"><i class="fas fa-user"></i>
+                    Administrador</a></li>
+                <li><a href="#" class="active"><i class="fas fa-users"></i> Clientes</a></li>
+                <li><a href="{% url "horario" %}" id="horarioLink" class="active"><i class="fas fa-clock"></i> Modificar horario</a></li>
+            </ul>
+        </nav>
+
+        <div class="content">
+            <div class="container">
+                <h1>Carlos Barber Shop</h1>
+                <h2>Modificar Horario</h2>
+                
+                <form id="horaNoDisponibleForm" method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="horaNoDisponible">Agregar Hora No Disponible:</label>
+                        <input type="time" id="horaNoDisponible" name="hora" required>
+                    </div>
+                    <button type="submit" class="btn">Agregar Hora</button>
+                </form>
+                
+                <h2>Horas No Disponibles</h2>
+                <div id="horasNoDisponibles" class="horas-list"></div>
+                
+                <form id="fechaNoDisponibleForm" method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="fechaNoDisponible">Agregar Fecha No Disponible:</label>
+                        <input type="date" id="fechaNoDisponible" name="fecha" required>
+                    </div>
+                    <button type="submit" class="btn">Agregar Fecha</button>
+                </form>
+                 
+                <h2>Fechas No Disponibles</h2>
+                <div id="fechasNoDisponibles" class="fechas-list"></div>
+
+                
+               
+                
+
+                <div id="mensaje"></div>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const horasNoDisponiblesContainer = document.getElementById("horasNoDisponibles");
+            const fechasNoDisponiblesContainer = document.getElementById("fechasNoDisponibles");
+        
+            // Función para ordenar horas en formato 12h
+            const ordenarHoras = (horas) => {
+                return horas.sort((a, b) => {
+                    // Separar las horas en componentes
+                    const [horaA, periodoA] = a.split(" ");
+                    const [horaB, periodoB] = b.split(" ");
+                    
+                    // Convertir a minutos desde medianoche para comparación
+                    const getMinutos = (hora, periodo) => {
+                        let [h, m] = hora.split(":").map(Number);
+                        if (periodo === "PM" && h !== 12) h += 12;
+                        if (periodo === "AM" && h === 12) h = 0;
+                        return h * 60 + m;
+                    };
+    
+                    const minutosA = getMinutos(horaA, periodoA);
+                    const minutosB = getMinutos(horaB, periodoB);
+                    
+                    return minutosA - minutosB;
+                });
+            };
+    
+            // Función para cargar las horas y fechas del backend
+            const cargarHorarios = async () => {
+                try {
+                    const response = await fetch("/obtener_horarios/");
+                    if (response.ok) {
+                        const data = await response.json();
+                        const horasConvertidas = data.horas.map(convertirHora12);
+                        const horasOrdenadas = ordenarHoras(horasConvertidas);
+                        mostrarHoras(horasOrdenadas || []);
+                        mostrarFechas(data.fechas.sort() || []); // Ordenar fechas
+                    } else {
+                        console.error("Error al cargar los horarios.");
+                    }
+                } catch (error) {
+                    console.error("Error de red:", error);
+                }
+            };
+        
+            // Función para convertir una hora al formato de 12 horas con AM/PM
+            const convertirHora12 = (hora24) => {
+                const [hora, minutos] = hora24.split(":").map(Number);
+                const sufijo = hora >= 12 ? "PM" : "AM";
+                const hora12 = hora % 12 || 12;
+                return `${hora12}:${String(minutos).padStart(2, "0")} ${sufijo}`;
+            };
+        
+            // Función para mostrar horas con formato 12h y botón de eliminar
+            const mostrarHoras = (horas) => {
+                horasNoDisponiblesContainer.innerHTML = "";
+                
+                // Separar AM y PM
+                const horasAM = horas.filter(hora => hora.includes("AM"));
+                const horasPM = horas.filter(hora => hora.includes("PM"));
+                
+                // Mostrar sección AM
+                if (horasAM.length > 0) {
+                    const amHeader = document.createElement("div");
+                    amHeader.className = "hora-header";
+                    amHeader.style.backgroundColor = "#4A148C";
+                    amHeader.style.color = "white";
+                    amHeader.style.padding = "5px 10px";
+                    amHeader.style.borderRadius = "4px";
+                    amHeader.style.marginBottom = "10px";
+                    amHeader.textContent = "Horas AM";
+                    horasNoDisponiblesContainer.appendChild(amHeader);
+                    
+                    horasAM.forEach(agregarHoraAlContenedor);
+                }
+                
+                // Mostrar sección PM
+                if (horasPM.length > 0) {
+                    const pmHeader = document.createElement("div");
+                    pmHeader.className = "hora-header";
+                    pmHeader.style.backgroundColor = "#4A148C";
+                    pmHeader.style.color = "white";
+                    pmHeader.style.padding = "5px 10px";
+                    pmHeader.style.borderRadius = "4px";
+                    pmHeader.style.marginTop = "20px";
+                    pmHeader.style.marginBottom = "10px";
+                    pmHeader.textContent = "Horas PM";
+                    horasNoDisponiblesContainer.appendChild(pmHeader);
+                    
+                    horasPM.forEach(agregarHoraAlContenedor);
+                }
+            };
+            
+            // Función auxiliar para agregar una hora al contenedor
+            const agregarHoraAlContenedor = (hora) => {
+                const horaItem = document.createElement("div");
+                horaItem.className = "hora-item";
+                horaItem.innerHTML = `
+                    <span>${hora}</span>
+                    <button class="eliminar-hora" data-hora="${hora}">Eliminar</button>
+                `;
+                horasNoDisponiblesContainer.appendChild(horaItem);
+                
+                // Agregar evento de eliminar
+                horaItem.querySelector(".eliminar-hora").addEventListener("click", async (e) => {
+                    const hora24 = revertirHora24(e.target.dataset.hora);
+                    await eliminarHorario("hora", hora24);
+                    cargarHorarios();
+                });
+            };
+        
+            // Resto de las funciones permanecen igual...
+            const mostrarFechas = (fechas) => {
+                fechasNoDisponiblesContainer.innerHTML = "";
+                fechas.forEach((fecha) => {
+                    const fechaItem = document.createElement("div");
+                    fechaItem.className = "fecha-item";
+                    fechaItem.innerHTML = `
+                        <span>${fecha}</span>
+                        <button class="eliminar-fecha" data-fecha="${fecha}">Eliminar</button>
+                    `;
+                    fechasNoDisponiblesContainer.appendChild(fechaItem);
+                });
+        
+                document.querySelectorAll(".eliminar-fecha").forEach((boton) => {
+                    boton.addEventListener("click", async (e) => {
+                        const fecha = e.target.dataset.fecha;
+                        await eliminarHorario("fecha", fecha);
+                        cargarHorarios();
+                    });
+                });
+            };
+        
+            const revertirHora24 = (hora12) => {
+                const [horaMinutos, sufijo] = hora12.split(" ");
+                let [hora, minutos] = horaMinutos.split(":").map(Number);
+        
+                if (sufijo === "PM" && hora !== 12) hora += 12;
+                if (sufijo === "AM" && hora === 12) hora = 0;
+        
+                return `${String(hora).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
+            };
+        
+            const eliminarHorario = async (tipo, valor) => {
+                try {
+                    const response = await fetch("/eliminar_horario/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": getCSRFToken(),
+                        },
+                        body: JSON.stringify({ tipo, valor }),
+                    });
+        
+                    if (response.ok) {
+                        console.log(`${tipo} eliminada: ${valor}`);
+                    } else {
+                        console.error("Error al eliminar el horario");
+                    }
+                } catch (error) {
+                    console.error("Error de red al eliminar:", error);
+                }
+            };
+        
+            const getCSRFToken = () => {
+                const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
+                return csrfToken ? csrfToken.value : "";
+            };
+        
+            // Cargar horarios al iniciar
+            cargarHorarios();
+        });
+        
+        // El resto del código (sidebar toggle, etc.) permanece igual...
+
+
+
+
+        
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarCollapse');
+    
+        sidebarToggle.addEventListener('click', function () {
+            sidebar.classList.toggle('active');
+        });
+    
+        // New code to close sidebar when clicking outside
+        document.addEventListener('click', function (event) {
+            // Check if the sidebar is active and the click is not inside the sidebar or toggle button
+            if (sidebar.classList.contains('active') && 
+                !sidebar.contains(event.target) && 
+                event.target !== sidebarToggle) {
+                sidebar.classList.remove('active');
+            }
+        });
+    });
+    </script>
+</body>
+</html>

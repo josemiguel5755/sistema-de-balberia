@@ -1,0 +1,328 @@
+/* General */
+/* * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
+    background: linear-gradient(135deg, #1a237e 0%, #4a148c 100%);
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+} */
+
+.container {
+    width: 100%;
+    padding: 15px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+h1 {
+    color: #ffffff;
+    text-align: center;
+    padding: 20px 0;
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #1B262C;
+    font-weight: 600;
+}
+
+/* Formulario */
+.reservation-system {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.reservation-form, .appointments-list {
+    background: #fff;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-top: 15px;
+    font-weight: 500;
+    color: #1B262C;
+}
+
+input, select {
+    margin-bottom: 20px;
+    padding: 12px;
+    border: 2px solid #BBE1FA;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #FF6F61;
+    box-shadow: 0 0 0 3px rgba(255, 111, 97, 0.2);
+}
+
+button {
+    padding: 14px;
+    background: #FF6F61;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+button:hover {
+    background: #FF5349;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 111, 97, 0.4);
+}
+
+/* Tabla */
+.citas-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.citas-table th, .citas-table td {
+    text-align: left;
+    padding: 10px;
+    font-weight: normal;
+    color: #1B262C;
+}
+
+.citas-table th {
+    font-weight: bold;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.citas-table tbody tr:nth-child(odd) {
+    background-color: rgba(187, 225, 250, 0.2);
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* Colores de estados */
+.estado-pendiente {
+    background-color: #FFEB3B;
+    color: #333;
+    font-weight: bold;
+}
+
+.estado-proceso {
+    background-color: #4CAF50;
+    color: #fff;
+    font-weight: bold;
+}
+
+/* Opcional: Asegura que el texto en la fila sea legible */
+.estado-pendiente td,
+.estado-proceso td {
+    padding: 10px;
+}
+
+
+
+
+
+
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
+    background: linear-gradient(to right, #0026ff, #0026ff);
+    color: #333;
+    min-height: 100vh;
+}
+ 
+/* Layout principal */
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Estilos del sidebar */
+.sidebar {
+    width: 250px;
+    background-color: #1a2035;
+    color: #fff;
+    height: 100%;
+    position: fixed;
+    left: 0;
+    top: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.sidebar-header {
+    padding: 20px;
+    background-color: #000000;
+}
+
+.sidebar-menu {
+    list-style-type: none;
+    padding: 0;
+}
+
+.sidebar-menu li a {
+    display: block;
+    padding: 15px 20px;
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.sidebar-menu li a:hover,
+.sidebar-menu li a.active {
+    background-color: #3c1172;
+}
+
+.sidebar-menu li a i {
+    margin-right: 10px;
+}
+
+/* Contenido principal */
+.main-content {
+    flex: 1;
+    margin-left: 250px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+/* Botón de toggle para el sidebar */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    background: #4a148c;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 1100;
+}
+
+/* Media queries para responsividad */
+@media (max-width: 768px) {
+    .sidebar {
+        margin-left: -250px;
+    }
+
+
+    .sidebar-header h3 {
+        margin-left: 50px;
+        font-size: 1.1rem;
+    }
+    
+    .sidebar.active {
+        margin-left: 0;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        padding-top: 60px;
+    }
+    
+    .main-content.expanded {
+        margin-left: 250px;
+    }
+    
+    .sidebar-toggle {
+        display: block;
+    }
+}
+
+/* Mantener los estilos existentes del sistema de reservas */
+.container {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
+
+
+
+
+
+
+
+/* Tabla */
+.citas-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.citas-table th, .citas-table td {
+    text-align: left;
+    padding: 10px;
+    font-weight: normal;
+    color: #1B262C;
+}
+
+.citas-table th {
+    font-weight: bold;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.citas-table tbody tr:nth-child(odd) {
+    background-color: rgba(187, 225, 250, 0.2);
+}
+
+/* Colores de estados */
+.estado-pendiente {
+    background-color: #ffe600 !important; /* Amarillo */
+    color: #333 !important;
+}
+
+.estado-completado {
+    background-color: #00ff08 !important; /* Verde */
+    color: #fff !important;
+}
+
+.estado-proceso {
+    background-color: #007BFF !important; /* Azul */
+    color: #fff !important;
+}
+
+/* Aseguramos legibilidad en las filas coloreadas */
+.estado-pendiente td,
+.estado-completado td,
+.estado-proceso td {
+    padding: 10px;
+    font-weight: bold;
+}

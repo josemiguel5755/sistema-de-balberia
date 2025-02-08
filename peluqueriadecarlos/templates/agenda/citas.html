@@ -1,0 +1,357 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peluquería Estilo Moderno - Sistema de Citas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to right, #0026ff, #0026ff);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Estilos del sidebar */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: #FF6B6B;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .sidebar {
+            width: 280px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            color: #fff;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            border-bottom: 2px solid #FF6B6B;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h3 {
+            color: #fff;
+            font-size: 1.5em;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar-menu li a {
+            color: #fff;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: block;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-menu li a:hover,
+        .sidebar-menu li a.active {
+            background: #FF6B6B;
+            transform: translateX(10px);
+        }
+
+        .sidebar-menu li a i {
+            margin-right: 10px;
+        }
+
+
+        .content h1 {
+            text-align: center;
+            color: #ffffff;
+        }
+
+        /* Contenido principal */
+        .content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 20px;
+            width: calc(100% - 280px);
+        }
+
+        .appointments-list {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+        }
+
+        .appointments-list h2 {
+            color: #2d3436;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #FF6B6B;
+            padding-bottom: 10px;
+        }
+
+        .citas-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .citas-table th,
+        .citas-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .citas-table th {
+            background-color: #f8f9fa;
+            color: #2d3436;
+            font-weight: 600;
+        }
+
+        .citas-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .estado-pendiente {
+            background-color: #ffeaa7;
+        }
+
+        .estado-proceso {
+            background-color: #55efc4;
+        }
+
+        /* Estilos para el botón de cancelar */
+        .btn-cancelar {
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-cancelar:hover {
+            background-color: #ff6b81;
+        }
+
+        /* Media queries para responsividad */
+        @media (max-width: 768px) {
+            .sidebar-toggle {
+                display: block;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 70px 10px 20px 10px;
+            }
+
+            .appointments-list {
+                padding: 15px;
+            }
+
+            .citas-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+                font-size: 14px;
+            }
+
+            .citas-table th,
+            .citas-table td {
+                padding: 10px;
+            }
+
+            .btn-cancelar {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+
+        /* Mejoras adicionales para móviles muy pequeños */
+        @media (max-width: 480px) {
+            .appointments-list h2 {
+                font-size: 1.4em;
+            }
+
+            .citas-table th,
+            .citas-table td {
+                padding: 8px;
+                font-size: 12px;
+            }
+
+            .btn-cancelar {
+                padding: 5px 10px;
+                font-size: 11px;
+            }
+        }
+
+        /* Overlay para cuando el menú está abierto en móvil */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <button id="sidebarCollapse" class="sidebar-toggle">☰</button>
+        <div id="overlay" class="overlay"></div>
+        
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>Panel de Control</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{% url "index" %}" id="clientesLink"><i class="fas fa-pencil-alt"></i>Agendar Citas</a></li>
+                <li><a href="#" class="active"><i class="fas fa-calendar-alt"></i> Citas Agendadas</a></li>
+            </ul>
+        </nav>
+
+
+       
+
+        <div class="content">
+            <h1>Carlos Barber Shop</h1>
+            <div class="appointments-list">
+                <h2>Citas Programadas</h2>
+                <div class="table-responsive">
+                    <table class="citas-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nombre</th>
+                                <th>Fecha</th>
+                                <th>Hora</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="citasContainer">
+                            {% for cita in citas %}
+                            <tr>
+                                <td>{{ cita.turno }}</td>
+                                <td>{{ cita.nombre }}</td>
+                                <td>{{ cita.fecha }}</td>
+                                <td>{{ cita.hora }}</td>
+                                <td>{{ cita.estado }}</td>
+                                <td>
+                                    <button class="btn-cancelar" onclick="cancelarCita({{ cita.id }})">
+                                        Cancelar cita
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarCollapse = document.getElementById('sidebarCollapse');
+            const overlay = document.getElementById('overlay');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            }
+
+            sidebarCollapse.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleSidebar();
+            });
+
+            overlay.addEventListener('click', function() {
+                toggleSidebar();
+            });
+
+            document.addEventListener('click', function(event) {
+                const isClickInside = sidebar.contains(event.target) || 
+                                    sidebarCollapse.contains(event.target);
+                
+                if (!isClickInside && window.innerWidth <= 768 && 
+                    sidebar.classList.contains('active')) {
+                    toggleSidebar();
+                }
+            });
+
+            sidebar.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+
+        function cancelarCita(id) {
+            if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
+                // Aquí puedes agregar la lógica para cancelar la cita
+                console.log('Cancelando cita con ID:', id);
+                // Implementar la llamada al backend para cancelar la cita
+            }
+        }
+    </script>
+</body>
+</html>

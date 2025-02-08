@@ -1,0 +1,314 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peluquería Estilo Moderno - Panel de Administrador</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'agenda/css/stile.css' %}">
+</head>
+<body>
+    <div class="layout">
+        <button id="sidebarCollapse" class="sidebar-toggle">☰</button>
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>Panel de Control</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{% url "adminis" %}" id="clientesLink"><i class="fas fa-users"></i> Administrador</a></li>
+                <li><a href="{% url "index" %}" class="active"><i class="fas fa-users"></i> Clientes</a></li>
+                <li><a href="{% url "horario" %}" id="horarioLink" class="active"><i class="fas fa-clock"></i> Modificar horario</a></li>
+            </ul>
+        </nav>
+
+        <div class="content">
+            <div class="container">
+                <h1>Carlos Barber Shop</h1>
+                <div id="adminTab" class="tab-content active">
+                    <h2>Citas Programadas</h2>
+                    <div class="responsive-table">
+                        <table id="adminTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nombre</th>
+                                    <th>Teléfono</th>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="citasContainer">
+                                <!-- Las citas se cargarán dinámicamente aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Modal para editar citas -->
+<div id="editarCitaModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2>Editar Cita</h2>
+        <form id="editarCitaForm" data-id="{{ cliente.id }}" onsubmit="guardarEdicion(event)">
+
+            <label for="editFecha">Fecha:</label>
+            <input type="date" id="editFecha" required>
+
+            <label for="editHora">Hora:</label>
+            <select id="editHora" required>
+                <option value="">Selecciona una hora</option>
+                <option value="09:00 AM">09:00 AM</option>
+                <option value="10:00  AM" >10:00 AM</option>
+                <option value="11:00 AM">11:00 AM</option>
+                <option value="12:00 PM">12:00 PM</option>
+                <option value="1:00 PM">1:00 PM</option>
+                <option value="2:00 PM">2:00 PM</option>
+                <option value="3:00 PM">3:00 PM</option>
+                <option value="4:00 PM">4:00 PM</option>
+                <option value="5:00 PM">5:00 PM</option>
+            </select>
+
+            <label for="editTurno">Turno:</label>
+            <input type="number" name=" turno" id="editTurno" min="1" required>
+
+            <div class="modal-buttons">
+                <button type="submit" class="guardar-button">Guardar</button>
+                <button type="button" class="cancelar-button" onclick="cerrarModal()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+    <!-- Token CSRF -->
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+    <script >
+      // Función global para cerrar el modal
+      document.addEventListener('DOMContentLoaded', function () {
+        const adminTable = document.getElementById('adminTable').getElementsByTagName('tbody')[0];
+        const modal = document.getElementById('editarCitaModal');
+        const editarCitaForm = document.getElementById('editarCitaForm');
+    
+        // Función para cargar citas desde la base de datos
+        function cargarCitas() {
+            fetch('adminis', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.citas.length > 0) {
+                        actualizarCitas(data.citas);
+                    } else {
+                        adminTable.innerHTML = '<tr><td colspan="7">No hay citas programadas.</td></tr>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar las citas:', error);
+                    adminTable.innerHTML = '<tr><td colspan="7">Error al cargar las citas.</td></tr>';
+                });
+        }
+    
+        // Función para actualizar la tabla con las citas
+        function actualizarCitas(citas) {
+            adminTable.innerHTML = '';
+            citas.forEach(cita => {
+                const row = adminTable.insertRow();
+                row.innerHTML = `
+                    <td>${cita.turno}</td>
+                    <td>${cita.nombre}</td>
+                    <td>${cita.telefono}</td>
+                    <td>${cita.fecha}</td>
+                    <td>${cita.hora}</td>
+                    <td>
+                        <select class="estado-select ${cita.estado}" data-id="${cita.id}">
+                            <option value="Pendiente" ${cita.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                            <option value="Proceso" ${cita.estado === 'Proceso' ? 'selected' : ''}>En Proceso</option>
+                            <option value="Completada" ${cita.estado === 'Completada' ? 'selected' : ''}>Completada</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="editar-button" data-id="${cita.id}">Editar</button>
+                        <button class="eliminar-button" data-id="${cita.id}">Eliminar</button>
+                    </td>
+                `;
+    
+                // Agregar eventos a los selectores y botones
+                row.querySelector('.estado-select').addEventListener('change', function () {
+                    cambiarEstado(cita.id, this.value, this);
+                });
+                row.querySelector('.editar-button').addEventListener('click', () => abrirModalEditar(cita));
+                row.querySelector('.eliminar-button').addEventListener('click', () => eliminarCita(cita.id));
+            });
+        }
+    
+        // Función para cambiar el estado de una cita
+        function cambiarEstado(id, nuevoEstado, selectElement) {
+            selectElement.disabled = true;
+            fetch('cambiar_estado/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                body: JSON.stringify({ id, estado: nuevoEstado }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('No se pudo actualizar el estado.');
+                        cargarCitas();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al actualizar el estado:', error);
+                    alert('Error al actualizar el estado. Por favor, intente nuevamente.');
+                })
+                .finally(() => {
+                    selectElement.disabled = false;
+                });
+        }
+    
+        // Función para abrir el modal de edición
+        function abrirModalEditar(cita) {
+            document.getElementById('editFecha').value = cita.fecha;
+            document.getElementById('editHora').value = cita.hora;
+            document.getElementById('editTurno').value = cita.turno;
+            modal.style.display = 'block';
+            editarCitaForm.dataset.id = cita.id;
+        }
+    
+        // Función para guardar la edición de una cita
+        function guardarEdicion(event) {
+            event.preventDefault();
+            
+            // Obtener los datos del formulario
+            const id = editarCitaForm.dataset.id;
+            const fecha = document.getElementById('editFecha').value;
+            const hora = document.getElementById('editHora').value;
+            const turno = document.getElementById('editTurno').value;
+    
+            // Verificar que todos los campos estén completos
+            if (!fecha || !hora || !turno) {
+                alert('Por favor complete todos los campos');
+                return;
+            }
+    
+            // Mostrar indicador de carga
+            const botonGuardar = event.target.querySelector('.guardar-button');
+            botonGuardar.disabled = true;
+            botonGuardar.innerHTML = 'Guardando...';
+    
+            // Enviar la petición al servidor
+            fetch('editar_cliente/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                body: JSON.stringify({
+                    id: id,
+                    fecha: fecha,
+                    hora: hora,
+                    turno: turno
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Recargar citas de inmediato
+                    cargarCitas();
+                    cerrarModal();
+                } else {
+                    alert(data.error || 'Error al guardar los cambios');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al guardar los cambios. Por favor, intente nuevamente.');
+            })
+            .finally(() => {
+                // Restaurar el botón
+                botonGuardar.disabled = false;
+                botonGuardar.innerHTML = 'Guardar';
+            });
+        }
+    
+        // Función para eliminar una cita
+        function eliminarCita(id) {
+            if (!confirm('¿Estás seguro de que deseas eliminar esta cita?')) return;
+    
+            fetch('eliminar-cita/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                body: JSON.stringify({ id }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        cargarCitas();
+                    } else {
+                        alert(data.error || 'No se pudo eliminar la cita.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al eliminar la cita:', error);
+                    alert('Error al eliminar la cita. Por favor, intente nuevamente.');
+                });
+        }
+    
+        // Función para cerrar el modal
+        function cerrarModal() {
+            modal.style.display = 'none';
+            editarCitaForm.reset();
+        }
+    
+        // Cerrar modal al hacer clic fuera
+        window.addEventListener('click', function (event) {
+            if (event.target === modal) cerrarModal();
+        });
+    
+        // Asociar evento de guardar al formulario
+        editarCitaForm.addEventListener('submit', guardarEdicion);
+    
+        // Cargar citas al inicio
+        cargarCitas();
+    });
+
+
+
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarCollapse');
+    
+        sidebarToggle.addEventListener('click', function () {
+            sidebar.classList.toggle('active');
+        });
+    
+        // New code to close sidebar when clicking outside
+        document.addEventListener('click', function (event) {
+            // Check if the sidebar is active and the click is not inside the sidebar or toggle button
+            if (sidebar.classList.contains('active') && 
+                !sidebar.contains(event.target) && 
+                event.target !== sidebarToggle) {
+                sidebar.classList.remove('active');
+            }
+        });
+    });
+
+
+    
+    </script>
+</body>
+</html>

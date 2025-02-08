@@ -1,0 +1,15 @@
+{
+    "builds": [
+      {
+        "src": "peluqueriadecarlos/wsgi.py",
+        "use": "@vercel/python"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "peluqueriadecarlos/wsgi.py"
+      }
+    ]
+  }
+  
