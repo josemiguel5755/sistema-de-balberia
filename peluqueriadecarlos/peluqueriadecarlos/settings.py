@@ -38,7 +38,7 @@ DEBUG = False
 
 # ALLOWED_HOSTS = ['*']
 
-ALLOWED_HOSTS = ["peluqueriadecarlos.vercel.app", "127.0.0.1"]
+ALLOWED_HOSTS = ["peluqueriadecarlos.vercel.app", ".vercel.app", "127.0.0.1"]
 
 
 # ALLOWED_HOSTS = []
@@ -91,7 +91,7 @@ TEMPLATES = [
 
 # WSGI_APPLICATION = "peluqueriadecarlos.wsgi.application"
 
-WSGI_APPLICATION = "peluqueriadecarlos.wsgi.app"
+WSGI_APPLICATION = "peluqueriadecarlos.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
