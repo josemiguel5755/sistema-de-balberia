@@ -31,17 +31,20 @@ SECRET_KEY = "django-insecure-!^w3g@%71f*$&k$nx@&*a2n_6_$n%strhn40+4iq-==9wctd-t
 
 # SECURITY WARNING: don't run with debug turned on in production!
 """ DEBUG = True """
-DEBUG = 'RENDER' not in os.environ
+DEBUG = False
+
 
 
 
 # ALLOWED_HOSTS = ['*']
 
+ALLOWED_HOSTS = ["peluqueriadecarlos.vercel.app", "127.0.0.1"]
 
-ALLOWED_HOSTS = []
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# ALLOWED_HOSTS = []
+# RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+# if RENDER_EXTERNAL_HOSTNAME:
+#     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 
 # Application definition
@@ -156,9 +159,11 @@ USE_TZ = True
 
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static')
-]
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'static')
+# ]
+
+STATICFILES_DIRS = []  # Vacío en producción
 
 
 
