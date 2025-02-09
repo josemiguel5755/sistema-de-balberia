@@ -89,8 +89,9 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "peluqueriadecarlos.wsgi.application"
+# WSGI_APPLICATION = "peluqueriadecarlos.wsgi.application"
 
+WSGI_APPLICATION = "peluqueriadecarlos.wsgi.app"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -158,12 +159,12 @@ USE_TZ = True
 
 
 
-STATIC_URL = '/static/'
+# STATIC_URL = '/static/'
 # STATICFILES_DIRS = [
 #     os.path.join(BASE_DIR, 'static')
 # ]
 
-STATICFILES_DIRS = []  # Vacío en producción
+
 
 
 
