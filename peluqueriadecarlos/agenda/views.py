@@ -12,7 +12,7 @@ from django.db.models import Max
 from .models import HorarioNoDisponible
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
-
+from django.shortcuts import get_object_or_404
 
 
 
@@ -48,53 +48,54 @@ def index(request):
 
 
 
-@csrf_exempt
-def guardar_cita(request):
-    """Guardar nueva cita"""
-    if request.method == 'POST':
-        try:
-            # Cargar los datos del cuerpo de la solicitud
-            data = json.loads(request.body)
+# @csrf_exempt
+# def guardar_cita(request):
+#     """Guardar nueva cita"""
+#     if request.method == 'POST':
+#         try:
+#             # Cargar los datos del cuerpo de la solicitud
+#             data = json.loads(request.body)
 
-            # Asegurarse de que los datos requeridos están presentes
-            campos_requeridos = ['nombre', 'telefono', 'fecha', 'hora']
-            for campo in campos_requeridos:
-                if campo not in data or not data[campo]:
-                    return JsonResponse({'success': False, 'error': f'El campo {campo} es obligatorio.'}, status=400)
+#             # Asegurarse de que los datos requeridos están presentes
+#             campos_requeridos = ['nombre', 'telefono', 'fecha', 'hora']
+#             for campo in campos_requeridos:
+#                 if campo not in data or not data[campo]:
+#                     return JsonResponse({'success': False, 'error': f'El campo {campo} es obligatorio.'}, status=400)
 
-            fecha = data['fecha']
-            hora = data['hora']
+#             fecha = data['fecha']
+#             hora = data['hora']
 
-            # Validar si la fecha y hora ya están ocupadas
-            if Cliente.objects.filter(fecha=fecha, hora=hora).exists():
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Esta hora ya está agendada por otro cliente. Por favor, elija otra.'
-                }, status=400)
+#             # Validar si la fecha y hora ya están ocupadas
+#             if Cliente.objects.filter(fecha=fecha, hora=hora).exists():
+#                 return JsonResponse({
+#                     'success': False,
+#                     'error': 'Esta hora ya está agendada por otro cliente. Por favor, elija otra.'
+#                 }, status=400)
 
-            # Calcular el próximo turno basado en el último turno registrado
-            ultimo_turno = Cliente.objects.aggregate(max_turno=Max('turno'))['max_turno'] or 0
-            nuevo_turno = ultimo_turno + 1
+#             # Calcular el próximo turno basado en el último turno registrado
+#             ultimo_turno = Cliente.objects.aggregate(max_turno=Max('turno'))['max_turno'] or 0
+#             nuevo_turno = ultimo_turno + 1
 
-            # Crear la cita con el turno asignado
-            form = ClienteForm(data)
-            if form.is_valid():
-                cita = form.save(commit=False)  # No guarda aún en la base de datos
-                cita.turno = nuevo_turno  # Asignar el turno generado
-                cita.save()  # Ahora sí guarda la cita en la base de datos
+#             # Crear la cita con el turno asignado
+#             form = ClienteForm(data)
+#             if form.is_valid():
+#                 cita = form.save(commit=False)  # No guarda aún en la base de datos
+#                 cita.turno = nuevo_turno  # Asignar el turno generado
+#                 cita.save()  # Ahora sí guarda la cita en la base de datos
 
-                return JsonResponse({'success': True, 'mensaje': 'Cita creada exitosamente', 'turno': nuevo_turno})
-            else:
-                # Si el formulario no es válido, devolver los errores
-                return JsonResponse({'success': False, 'error': form.errors}, status=400)
+#                 return JsonResponse({'success': True, 'mensaje': 'Cita creada exitosamente', 'turno': nuevo_turno})
+#             else:
+#                 # Si el formulario no es válido, devolver los errores
+#                 return JsonResponse({'success': False, 'error': form.errors}, status=400)
 
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Datos inválidos'}, status=400)
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+#         except json.JSONDecodeError:
+#             return JsonResponse({'success': False, 'error': 'Datos inválidos'}, status=400)
+#         except Exception as e:
+#             return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
-    # Si no es una solicitud POST
-    return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+#     # Si no es una solicitud POST
+#     return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
 
 
 
@@ -389,26 +390,97 @@ def guardar_horario(request):
 
 
 
-
+@require_http_methods(["GET"])
 def citas(request):
-    # Obtener y ordenar las citas por fecha y hora
-    citas = Cliente.objects.values('nombre', 'telefono', 'fecha', 'hora', 'estado').order_by('fecha', 'hora')
+    token = request.GET.get('token', '')
     
-    # Convertir las citas a una lista y asignarles turnos
+    citas = Cliente.objects.values(
+        'id', 'nombre', 'telefono', 'fecha', 'hora', 'estado', 'turno', 'token'
+    ).order_by('fecha', 'hora')
+
     citas_list = [
         {
-            'turno': idx + 1,
+            'id': cita['id'],
+            'turno': cita['turno'],
             'nombre': cita['nombre'],
             'telefono': cita['telefono'],
             'fecha': cita['fecha'].strftime('%Y-%m-%d'),
             'hora': cita['hora'].strftime('%I:%M %p'),
-            'estado': cita['estado']
+            'estado': cita['estado'],
+            'can_cancel': cita['token'] == token
         }
-        for idx, cita in enumerate(citas)
+        for cita in citas
     ]
     
-    # Pasar las citas procesadas al contexto
-    return render(request, 'agenda/citas.html', {'citas': citas_list})
+    return render(request, 'agenda/citas.html', {
+        'citas': citas_list,
+        'current_token': token
+    })
+
+@csrf_exempt
+def guardar_cita(request):
+    """Guardar nueva cita"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Validar campos requeridos
+            campos_requeridos = ['nombre', 'telefono', 'fecha', 'hora']
+            for campo in campos_requeridos:
+                if campo not in data or not data[campo]:
+                    return JsonResponse({'success': False, 'error': f'El campo {campo} es obligatorio.'}, status=400)
+
+            fecha = data['fecha']
+            hora = data['hora']
+
+            # Validar si la fecha y hora ya están ocupadas
+            if Cliente.objects.filter(fecha=fecha, hora=hora).exists():
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Esta hora ya está agendada por otro cliente. Por favor, elija otra.'
+                }, status=400)
+
+            # Calcular el próximo turno
+            ultimo_turno = Cliente.objects.aggregate(max_turno=Max('turno'))['max_turno'] or 0
+            nuevo_turno = ultimo_turno + 1
+
+            # Crear la nueva cita
+            nueva_cita = Cliente(
+                nombre=data['nombre'],
+                telefono=data['telefono'],
+                fecha=fecha,
+                hora=hora,
+                turno=nuevo_turno,
+                estado='Pendiente'
+            )
+            nueva_cita.save()  # Esto generará automáticamente el token
+
+            return JsonResponse({
+                'success': True,
+                'mensaje': 'Cita creada exitosamente',
+                'turno': nuevo_turno,
+                'token': nueva_cita.token,
+                'redirect_url': f'/citas/?token={nueva_cita.token}'
+            })
+
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Datos inválidos'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+    return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+@csrf_exempt
+def cancelar_cita(request, cita_id):
+    token = request.GET.get('token', '')
+    cita = get_object_or_404(Cliente, id=cita_id)
+
+    if cita.token != token:
+        return JsonResponse({'error': 'No tienes permiso para cancelar esta cita'}, status=403)
+
+    cita.delete()
+    return JsonResponse({'message': 'Cita cancelada correctamente'})
+
 
 
 

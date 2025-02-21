@@ -30,15 +30,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-!^w3g@%71f*$&k$nx@&*a2n_6_$n%strhn40+4iq-==9wctd-t"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-""" DEBUG = True """
-DEBUG = False
 
+DEBUG = True
 
+ALLOWED_HOSTS = []
 
-
-# ALLOWED_HOSTS = ['*']
-
-ALLOWED_HOSTS = ["peluqueriadecarlos.vercel.app", ".vercel.app", "127.0.0.1"]
+# ALLOWED_HOSTS = ["peluqueriadecarlos.vercel.app", ".vercel.app", "127.0.0.1"]
 
 
 # ALLOWED_HOSTS = []
@@ -96,27 +93,30 @@ WSGI_APPLICATION = "peluqueriadecarlos.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'peluqueria',
-#         'USER': 'root',
-#         'PASSWORD': '',
-#         'HOST': 'localhost',
-#         'PORT': '3306',
-#         'OPTIONS': {
-#             'charset': 'utf8mb4',
-#         }
-#     }
-# }
-
-load_dotenv()
-
 DATABASES = {
-    'default': dj_database_url.config(
-        default="mysql://root:@127.0.0.1:3306/peluqueria"
-    )
-}
+     'default': {
+         'ENGINE': 'django.db.backends.mysql',
+         'NAME': 'peluqueria',
+         'USER': 'root',
+         'PASSWORD': '',
+         'HOST': 'localhost',
+         'PORT': '3306',
+         'OPTIONS': {
+             'charset': 'utf8mb4',
+         }
+     }
+ }
+
+# load_dotenv()
+
+# DATABASES = {
+#      'default': dj_database_url.config(
+#          default="mysql://root:@127.0.0.1:3306/peluqueria"
+#     )
+#  }
+
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -152,17 +152,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-# STATIC_URL = "static/"
-# STATICFILES_DIRS = (
-#     os.path.join(BASE_DIR, 'static'),
-# )
+STATIC_URL = "static/"
+STATICFILES_DIRS = (
+     os.path.join(BASE_DIR, 'static'),
+ )
 
 
 
-# STATIC_URL = '/static/'
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'static')
-# ]
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+     os.path.join(BASE_DIR, 'static')
+ ]
 
 
 
@@ -171,9 +171,9 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# STATIC_URL = '/static/'
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Configuración específica para PWA
 PWA_APP_NAME = 'peluqueriadecarlos'

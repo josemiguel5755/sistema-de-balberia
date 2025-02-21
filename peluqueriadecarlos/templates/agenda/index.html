@@ -167,62 +167,62 @@
             }
     
             // Manejar el envío del formulario
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-    
-                const nombre = document.getElementById('nombre').value.trim();
-                const telefono = document.getElementById('telefono').value.trim();
-                const fecha = fechaInput.value;
-                const horaSeleccionada = document.getElementById('hora').value;
-    
-                // Verificar si la fecha está marcada como no disponible
-                if (fechasNoDisponibles.includes(fecha)) {
-                    alert("Esta fecha no está disponible. Por favor, selecciona otra.");
-                    return;
-                }
-    
-                const hora = convertirHoraA24(horaSeleccionada);
-    
-                // Validar que los campos estén completos
-                if (nombre && telefono && fecha && hora) {
-                    const formData = {
-                        nombre,
-                        telefono,
-                        fecha,
-                        hora,
-                        estado: 'Pendiente' // Estado por defecto al crear una cita
-                    };
-    
-                    fetch('{% url "guardar_cita" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}',
-                        },
-                        body: JSON.stringify(formData)
-                    })
-                    .then(response => response.json().then(data => ({ status: response.status, body: data })))
-                    .then(({ status, body }) => {
-                        if (status === 200 && body.success) {
-                            alert(`Cita creada exitosamente. Turno asignado: ${body.turno}`);
-                            actualizarCitas();
-                            form.reset();
-                        } else if (status === 400 && body.error) {
-                            // Mostrar alerta si la hora ya está ocupada
-                            alert(body.error);
-                        } else {
-                            throw new Error(body.error || "Error desconocido al guardar la cita.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error(error);
-                        alert(error.message || "Ha ocurrido un error. Inténtalo nuevamente.");
-                    });
-                } else {
-                    alert('Por favor, completa todos los campos antes de enviar.');
-                }
-            });
-    
+            // Actualizar la parte del manejo del formulario en el script existente
+form.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const nombre = document.getElementById('nombre').value.trim();
+    const telefono = document.getElementById('telefono').value.trim();
+    const fecha = fechaInput.value;
+    const horaSeleccionada = document.getElementById('hora').value;
+
+    if (fechasNoDisponibles.includes(fecha)) {
+        alert("Esta fecha no está disponible. Por favor, selecciona otra.");
+        return;
+    }
+
+    const hora = convertirHoraA24(horaSeleccionada);
+
+    if (nombre && telefono && fecha && hora) {
+        const formData = {
+            nombre,
+            telefono,
+            fecha,
+            hora,
+            estado: 'Pendiente'
+        };
+
+        fetch('{% url "guardar_cita" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+        .then(({ status, body }) => {
+            if (status === 200 && body.success) {
+                // Guardar el token en localStorage para futuras referencias
+                localStorage.setItem(`clienteToken_${telefono}`, body.token);
+                
+                alert(`Cita creada exitosamente.\nTurno asignado: ${body.turno}\nTu token es: ${body.token}`);
+                actualizarCitas();
+                form.reset();
+            } else if (status === 400 && body.error) {
+                alert(body.error);
+            } else {
+                throw new Error(body.error || "Error desconocido al guardar la cita.");
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            alert(error.message || "Ha ocurrido un error. Inténtalo nuevamente.");
+        });
+    } else {
+        alert('Por favor, completa todos los campos antes de enviar.');
+    }
+});
             // Actualizar la tabla de citas al cargar la página
             actualizarCitas();
     

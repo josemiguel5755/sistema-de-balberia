@@ -19,6 +19,7 @@ urlpatterns = [
      path('horas/', views.vista_horas, name='vista_horas'),
      path('citas', views.citas, name='citas'),
      path('iniciosesion', views.iniciosesion, name='iniciosesion'),
+     path('cancelar-cita/', views.cancelar_cita, name='cancelar_cita'),
      path('manifest.json', serve, {'path': 'agenda/manifest.json'}),
      path('sw.js', serve, {'path': 'agenda/sw.js'}),
 ]

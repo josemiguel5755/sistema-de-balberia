@@ -28,7 +28,6 @@
             position: relative;
         }
 
-        /* Estilos del sidebar */
         .sidebar-toggle {
             display: none;
             position: fixed;
@@ -97,18 +96,16 @@
             margin-right: 10px;
         }
 
-
-        .content h1 {
-            text-align: center;
-            color: #ffffff;
-        }
-
-        /* Contenido principal */
         .content {
             flex: 1;
             margin-left: 280px;
             padding: 20px;
             width: calc(100% - 280px);
+        }
+
+        .content h1 {
+            text-align: center;
+            color: #ffffff;
         }
 
         .appointments-list {
@@ -161,7 +158,6 @@
             background-color: #55efc4;
         }
 
-        /* Estilos para el botón de cancelar */
         .btn-cancelar {
             background-color: #ff4757;
             color: white;
@@ -177,7 +173,6 @@
             background-color: #ff6b81;
         }
 
-        /* Media queries para responsividad */
         @media (max-width: 768px) {
             .sidebar-toggle {
                 display: block;
@@ -219,7 +214,6 @@
             }
         }
 
-        /* Mejoras adicionales para móviles muy pequeños */
         @media (max-width: 480px) {
             .appointments-list h2 {
                 font-size: 1.4em;
@@ -237,7 +231,6 @@
             }
         }
 
-        /* Overlay para cuando el menú está abierto en móvil */
         .overlay {
             display: none;
             position: fixed;
@@ -264,13 +257,10 @@
                 <h3>Panel de Control</h3>
             </div>
             <ul class="sidebar-menu">
-                <li><a href="{% url "index" %}" id="clientesLink"><i class="fas fa-pencil-alt"></i>Agendar Citas</a></li>
+                <li><a href="{% url 'index' %}" id="clientesLink"><i class="fas fa-pencil-alt"></i>Agendar Citas</a></li>
                 <li><a href="#" class="active"><i class="fas fa-calendar-alt"></i> Citas Agendadas</a></li>
             </ul>
         </nav>
-
-
-       
 
         <div class="content">
             <h1>Carlos Barber Shop</h1>
@@ -297,9 +287,13 @@
                                 <td>{{ cita.hora }}</td>
                                 <td>{{ cita.estado }}</td>
                                 <td>
-                                    <button class="btn-cancelar" onclick="cancelarCita({{ cita.id }})">
-                                        Cancelar cita
-                                    </button>
+                                    {% if cita.usuario_id == request.user.id %}
+                                        <button class="btn-cancelar" onclick="cancelarCita({{ cita.id }})">
+                                            Cancelar cita
+                                        </button>
+                                    {% else %}
+                                        <span style="color: gray;">No disponible</span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -315,21 +309,21 @@
             const sidebar = document.getElementById('sidebar');
             const sidebarCollapse = document.getElementById('sidebarCollapse');
             const overlay = document.getElementById('overlay');
-
+        
             function toggleSidebar() {
                 sidebar.classList.toggle('active');
                 overlay.classList.toggle('active');
             }
-
+        
             sidebarCollapse.addEventListener('click', function(e) {
                 e.stopPropagation();
                 toggleSidebar();
             });
-
+        
             overlay.addEventListener('click', function() {
                 toggleSidebar();
             });
-
+        
             document.addEventListener('click', function(event) {
                 const isClickInside = sidebar.contains(event.target) || 
                                     sidebarCollapse.contains(event.target);
@@ -339,17 +333,48 @@
                     toggleSidebar();
                 }
             });
-
+        
             sidebar.addEventListener('click', function(e) {
                 e.stopPropagation();
             });
         });
-
+        
         function cancelarCita(id) {
             if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
-                // Aquí puedes agregar la lógica para cancelar la cita
-                console.log('Cancelando cita con ID:', id);
-                // Implementar la llamada al backend para cancelar la cita
+                // Obtener el token de la URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('token');
+                
+                // Verificar si tenemos el token
+                if (!token) {
+                    alert('No tienes permiso para cancelar esta cita');
+                    return;
+                }
+        
+                fetch(`/cancelar_cita/${id}/?token=${token}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.message) {
+                        alert(data.message);
+                        location.reload(); // Recargar la página para actualizar la lista
+                    } else if (data.error) {
+                        alert(data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al cancelar la cita');
+                });
             }
         }
     </script>
