@@ -97,8 +97,8 @@ DATABASES = {
      'default': {
          'ENGINE': 'django.db.backends.mysql',
          'NAME': 'peluqueria',
-         'USER': 'root',
-         'PASSWORD': '',
+         'USER': 'barberia',
+         'PASSWORD': 'q.JJb,rke,utw+4-d119',
          'HOST': 'localhost',
          'PORT': '3306',
          'OPTIONS': {
