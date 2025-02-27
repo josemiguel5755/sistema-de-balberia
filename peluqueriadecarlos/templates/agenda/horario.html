@@ -302,13 +302,13 @@ background-color: #000000;
                 <form id="horaNoDisponibleForm" method="POST">
                     {% csrf_token %}
                     <div class="form-group">
-                        <label for="horaNoDisponible">Agregar Hora No Disponible:</label>
+                        <label for="horaNoDisponible">Agregar  Disponible:</label>
                         <input type="time" id="horaNoDisponible" name="hora" required>
                     </div>
                     <button type="submit" class="btn">Agregar Hora</button>
                 </form>
                 
-                <h2>Horas No Disponibles</h2>
+                <h2>Horas Disponibles</h2>
                 <div id="horasNoDisponibles" class="horas-list"></div>
                 
                 <form id="fechaNoDisponibleForm" method="POST">
