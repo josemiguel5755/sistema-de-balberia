@@ -1,9 +1,12 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión</title>
+    <link rel="icon" type="image/x-icon" href="{% static "agenda/icons/carlosimagen.ico" %}" />
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,6 +26,19 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 400px;
+        }
+
+
+        .regresar {
+            position: relative;
+            bottom: 290px;
+            left: 65%;
+            
+
+        }
+
+        .regresar img {
+            width: 200%;
         }
 
         .login-form {
@@ -75,11 +91,11 @@
         }
 
         .error-message {
-            color: #d32f2f;
-            font-size: 0.875rem;
+            color:rgb(255, 0, 0);
+            font-size: 20px;
             margin-bottom: 1rem;
             text-align: center;
-            display: none;
+           
         }
 
         .submit-btn {
@@ -102,9 +118,24 @@
                 padding: 1rem;
             }
         }
+
+
+        @media (max-width: 1080px) {
+            .regresar {
+             transform: translate(-80%);
+            }
+        }
     </style>
 </head>
 <body>
+
+
+    <div class="regresar">
+        <a href="{% url "index" %}">
+            <img src="{% static 'agenda/icons/bx-log-out.svg' %}" alt="">
+        </a>
+    </div>
+
     <div class="container">
         <form id="loginForm" class="login-form" method="POST" action="{% url 'iniciosesion' %}">
             {% csrf_token %}
@@ -123,7 +154,7 @@
                 </div>
             </div>
             {% if messages %}
-                <div class="error-message">
+                <div class="error-message" id="alert-container">
                     {% for message in messages %}
                         <p>{{ message }}</p>
                     {% endfor %}
@@ -135,7 +166,17 @@
     </div>
 
     <script>
-       
+        document.addEventListener("DOMContentLoaded", function() {
+            var alertContainer = document.getElementById('alert-container');
+            
+            // Solo proceder si el contenedor de la alerta existe
+            if (alertContainer) {
+                // Cerrar el mensaje automáticamente después de 5 segundos (opcional)
+                setTimeout(function() {
+                    alertContainer.style.display = 'none';
+                }, 2000); // 5000 ms = 5 segundos
+            }
+        });
     </script>
 </body>
 </html>

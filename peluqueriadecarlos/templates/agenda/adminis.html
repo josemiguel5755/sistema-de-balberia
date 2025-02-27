@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{% static 'agenda/css/stile.css' %}">
+    <link rel="icon" type="image/x-icon" href="{% static "agenda/icons/carlosimagen.ico" %}" />
 </head>
 <body>
     <div class="layout">
@@ -17,9 +18,9 @@
                 <h3>Panel de Control</h3>
             </div>
             <ul class="sidebar-menu">
-                <li><a href="{% url "adminis" %}" id="clientesLink"><i class="fas fa-users"></i> Administrador</a></li>
-                <li><a href="{% url "index" %}" class="active"><i class="fas fa-users"></i> Clientes</a></li>
-                <li><a href="{% url "horario" %}" id="horarioLink" class="active"><i class="fas fa-clock"></i> Modificar horario</a></li>
+                <li id="adm"><a href="{% url "adminis" %}" id="clientesLink"><i class="fas fa-users"></i> Administrador</a></li>
+                <li id="cliente"><a href="{% url "index" %}" class="active"><i class="fas fa-users"></i> Clientes</a></li>
+                <li id="hora"><a href="{% url "horario" %}" id="horarioLink" class="active"><i class="fas fa-clock"></i> Modificar horario</a></li>
             </ul>
         </nav>
 
@@ -28,6 +29,7 @@
                 <h1>Carlos Barber Shop</h1>
                 <div id="adminTab" class="tab-content active">
                     <h2>Citas Programadas</h2>
+                    <div class="last-update" id="lastUpdateInfo">Última actualización: <span id="lastUpdateTime">Ahora</span></div>
                     <div class="responsive-table">
                         <table id="adminTable">
                             <thead>
@@ -75,7 +77,7 @@
             </select>
 
             <label for="editTurno">Turno:</label>
-            <input type="number" name=" turno" id="editTurno" min="1" required>
+            <input type="number" name="turno" id="editTurno" min="1" required>
 
             <div class="modal-buttons">
                 <button type="submit" class="guardar-button">Guardar</button>
@@ -89,226 +91,613 @@
     <!-- Token CSRF -->
     <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 
-    <script >
+    <script>
+      // Variables globales
+      let lastCitasCount = 0;
+      let pollingInterval;
+      let isSessionExpired = false;
+      const POLLING_INTERVAL_MS = 10000; // Consultar cada 10 segundos
+      const POLLING_INTERVAL_INACTIVE_MS = 30000; // Consultar cada 30 segundos cuando está inactivo
+      
       // Función global para cerrar el modal
+      function cerrarModal() {
+          document.getElementById('editarCitaModal').style.display = 'none';
+          document.getElementById('editarCitaForm').reset();
+      }
+      
       document.addEventListener('DOMContentLoaded', function () {
-        const adminTable = document.getElementById('adminTable').getElementsByTagName('tbody')[0];
-        const modal = document.getElementById('editarCitaModal');
-        const editarCitaForm = document.getElementById('editarCitaForm');
-    
-        // Función para cargar citas desde la base de datos
-        function cargarCitas() {
-            fetch('adminis', {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.citas.length > 0) {
-                        actualizarCitas(data.citas);
-                    } else {
-                        adminTable.innerHTML = '<tr><td colspan="7">No hay citas programadas.</td></tr>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error al cargar las citas:', error);
-                    adminTable.innerHTML = '<tr><td colspan="7">Error al cargar las citas.</td></tr>';
-                });
-        }
-    
-        // Función para actualizar la tabla con las citas
-        function actualizarCitas(citas) {
-            adminTable.innerHTML = '';
-            citas.forEach(cita => {
-                const row = adminTable.insertRow();
-                row.innerHTML = `
-                    <td>${cita.turno}</td>
-                    <td>${cita.nombre}</td>
-                    <td>${cita.telefono}</td>
-                    <td>${cita.fecha}</td>
-                    <td>${cita.hora}</td>
-                    <td>
-                        <select class="estado-select ${cita.estado}" data-id="${cita.id}">
-                            <option value="Pendiente" ${cita.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
-                            <option value="Proceso" ${cita.estado === 'Proceso' ? 'selected' : ''}>En Proceso</option>
-                            <option value="Completada" ${cita.estado === 'Completada' ? 'selected' : ''}>Completada</option>
-                        </select>
-                    </td>
-                    <td>
-                        <button class="editar-button" data-id="${cita.id}">Editar</button>
-                        <button class="eliminar-button" data-id="${cita.id}">Eliminar</button>
-                    </td>
-                `;
-    
-                // Agregar eventos a los selectores y botones
-                row.querySelector('.estado-select').addEventListener('change', function () {
-                    cambiarEstado(cita.id, this.value, this);
-                });
-                row.querySelector('.editar-button').addEventListener('click', () => abrirModalEditar(cita));
-                row.querySelector('.eliminar-button').addEventListener('click', () => eliminarCita(cita.id));
-            });
-        }
-    
-        // Función para cambiar el estado de una cita
-        function cambiarEstado(id, nuevoEstado, selectElement) {
-            selectElement.disabled = true;
-            fetch('cambiar_estado/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                },
-                body: JSON.stringify({ id, estado: nuevoEstado }),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.success) {
-                        alert('No se pudo actualizar el estado.');
-                        cargarCitas();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error al actualizar el estado:', error);
-                    alert('Error al actualizar el estado. Por favor, intente nuevamente.');
-                })
-                .finally(() => {
-                    selectElement.disabled = false;
-                });
-        }
-    
-        // Función para abrir el modal de edición
-        function abrirModalEditar(cita) {
-            document.getElementById('editFecha').value = cita.fecha;
-            document.getElementById('editHora').value = cita.hora;
-            document.getElementById('editTurno').value = cita.turno;
-            modal.style.display = 'block';
-            editarCitaForm.dataset.id = cita.id;
-        }
-    
-        // Función para guardar la edición de una cita
-        function guardarEdicion(event) {
-            event.preventDefault();
-            
-            // Obtener los datos del formulario
-            const id = editarCitaForm.dataset.id;
-            const fecha = document.getElementById('editFecha').value;
-            const hora = document.getElementById('editHora').value;
-            const turno = document.getElementById('editTurno').value;
-    
-            // Verificar que todos los campos estén completos
-            if (!fecha || !hora || !turno) {
-                alert('Por favor complete todos los campos');
-                return;
-            }
-    
-            // Mostrar indicador de carga
-            const botonGuardar = event.target.querySelector('.guardar-button');
-            botonGuardar.disabled = true;
-            botonGuardar.innerHTML = 'Guardando...';
-    
-            // Enviar la petición al servidor
-            fetch('editar_cliente/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                },
-                body: JSON.stringify({
-                    id: id,
-                    fecha: fecha,
-                    hora: hora,
-                    turno: turno
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Recargar citas de inmediato
-                    cargarCitas();
-                    cerrarModal();
-                } else {
-                    alert(data.error || 'Error al guardar los cambios');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al guardar los cambios. Por favor, intente nuevamente.');
-            })
-            .finally(() => {
-                // Restaurar el botón
-                botonGuardar.disabled = false;
-                botonGuardar.innerHTML = 'Guardar';
-            });
-        }
-    
-        // Función para eliminar una cita
-        function eliminarCita(id) {
-            if (!confirm('¿Estás seguro de que deseas eliminar esta cita?')) return;
-    
-            fetch('eliminar-cita/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                },
-                body: JSON.stringify({ id }),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        cargarCitas();
-                    } else {
-                        alert(data.error || 'No se pudo eliminar la cita.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error al eliminar la cita:', error);
-                    alert('Error al eliminar la cita. Por favor, intente nuevamente.');
-                });
-        }
-    
-        // Función para cerrar el modal
-        function cerrarModal() {
-            modal.style.display = 'none';
-            editarCitaForm.reset();
-        }
-    
-        // Cerrar modal al hacer clic fuera
-        window.addEventListener('click', function (event) {
-            if (event.target === modal) cerrarModal();
-        });
-    
-        // Asociar evento de guardar al formulario
-        editarCitaForm.addEventListener('submit', guardarEdicion);
-    
-        // Cargar citas al inicio
-        cargarCitas();
-    });
-
-
-
-
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const sidebar = document.getElementById('sidebar');
-        const sidebarToggle = document.getElementById('sidebarCollapse');
-    
-        sidebarToggle.addEventListener('click', function () {
-            sidebar.classList.toggle('active');
-        });
-    
-        // New code to close sidebar when clicking outside
-        document.addEventListener('click', function (event) {
-            // Check if the sidebar is active and the click is not inside the sidebar or toggle button
-            if (sidebar.classList.contains('active') && 
-                !sidebar.contains(event.target) && 
-                event.target !== sidebarToggle) {
-                sidebar.classList.remove('active');
-            }
-        });
-    });
-
-
-    
+          const adminTable = document.getElementById('adminTable').getElementsByTagName('tbody')[0];
+          const modal = document.getElementById('editarCitaModal');
+          const editarCitaForm = document.getElementById('editarCitaForm');
+          const lastUpdateTime = document.getElementById('lastUpdateTime');
+          let inactiveMode = false;
+          let lastActivity = Date.now();
+      
+          // Función para cargar citas desde la base de datos
+          function cargarCitas() {
+              fetch('adminis', {
+                  headers: { 
+                      'X-Requested-With': 'XMLHttpRequest',
+                      'Cache-Control': 'no-cache, no-store, must-revalidate',
+                      'Pragma': 'no-cache',
+                      'Expires': '0'
+                  },
+                  credentials: 'same-origin' // Asegura que las cookies se envíen con la solicitud
+              })
+              .then(response => {
+                  if (!response.ok) {
+                      throw new Error('Error de red: ' + response.status);
+                  }
+                  // Verificar si la respuesta es JSON
+                  const contentType = response.headers.get('content-type');
+                  if (!contentType || !contentType.includes('application/json')) {
+                      isSessionExpired = true;
+                      throw new Error('La sesión ha expirado o la respuesta no es JSON');
+                  }
+                  return response.json();
+              })
+              .then(data => {
+                  // IMPORTANTE: Este bloque se ejecuta cuando se recibe JSON válido
+                  isSessionExpired = false; // Resetear bandera si la respuesta es correcta
+                  
+                  if (data.success) {
+                      try {
+                          // Actualizar la hora de la última actualización
+                          const ahora = new Date();
+                          lastUpdateTime.textContent = ahora.toLocaleTimeString();
+                          
+                          if (data.citas && Array.isArray(data.citas) && data.citas.length > 0) {
+                              actualizarCitas(data.citas);
+                              
+                              // Comprobar si hay nuevas citas
+                              if (data.citas.length > lastCitasCount) {
+                                  notificarNuevasCitas(data.citas.length - lastCitasCount);
+                              }
+                              
+                              // Actualizar el contador de citas
+                              lastCitasCount = data.citas.length;
+                          } else {
+                              adminTable.innerHTML = '<tr><td colspan="7">No hay citas programadas.</td></tr>';
+                              lastCitasCount = 0;
+                          }
+                      } catch (e) {
+                          console.error('Error al procesar datos:', e);
+                          // Si hay un error al procesar los datos, recargar la página
+                          window.location.reload();
+                      }
+                  } else {
+                      adminTable.innerHTML = '<tr><td colspan="7">Error al cargar las citas.</td></tr>';
+                  }
+              })
+              .catch(error => {
+                  console.error('Error al cargar las citas:', error);
+                  
+                  if (isSessionExpired) {
+                      // Si la sesión expiró, recargar la página para obtener una nueva sesión
+                      adminTable.innerHTML = '<tr><td colspan="7">La sesión ha expirado. <button id="reloadButton">Recargar página</button></td></tr>';
+                      document.getElementById('reloadButton').addEventListener('click', function() {
+                          window.location.reload();
+                      });
+                      
+                      // Detener el polling hasta que el usuario recargue
+                      clearInterval(pollingInterval);
+                  } else {
+                      adminTable.innerHTML = '<tr><td colspan="7">Error al cargar las citas. <button class="retry-button">Reintentar</button></td></tr>';
+                      document.querySelector('.retry-button').addEventListener('click', cargarCitas);
+                  }
+              });
+          }
+          
+          // Función simplificada para cuando la página está inactiva
+          function pingServidor() {
+              fetch('adminis', {
+                  method: 'HEAD',  // Solo encabezados, no contenido
+                  headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                  credentials: 'same-origin'
+              })
+              .then(response => {
+                  if (!response.ok) {
+                      isSessionExpired = true;
+                  }
+              })
+              .catch(() => {
+                  console.error('Error en ping al servidor');
+              });
+          }
+          
+          // Función para notificar nuevas citas
+          function notificarNuevasCitas(numNuevas) {
+              // Notificación visual (puedes personalizar esto)
+              const notificacion = document.createElement('div');
+              notificacion.className = 'notificacion-nuevas-citas';
+              notificacion.textContent = `¡${numNuevas} nueva${numNuevas > 1 ? 's' : ''} cita${numNuevas > 1 ? 's' : ''} registrada${numNuevas > 1 ? 's' : ''}!`;
+              notificacion.style.position = 'fixed';
+              notificacion.style.top = '20px';
+              notificacion.style.right = '20px';
+              notificacion.style.backgroundColor = '#4CAF50';
+              notificacion.style.color = 'white';
+              notificacion.style.padding = '10px 15px';
+              notificacion.style.borderRadius = '5px';
+              notificacion.style.zIndex = '9999';
+              notificacion.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+              
+              document.body.appendChild(notificacion);
+              
+              // Reproducir sonido (opcional)
+              let sound = new Audio('/static/agenda/notification.mp3');
+              sound.play().catch(e => console.log('No se pudo reproducir el sonido', e));
+              
+              // Eliminar la notificación después de 5 segundos
+              setTimeout(() => {
+                  document.body.removeChild(notificacion);
+              }, 5000);
+              
+              // Opcional: notificación del navegador si está permitido
+              if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('Carlos Barber Shop', {
+                      body: `¡${numNuevas} nueva${numNuevas > 1 ? 's' : ''} cita${numNuevas > 1 ? 's' : ''} registrada${numNuevas > 1 ? 's' : ''}!`,
+                      icon: '/static/agenda/icons/icon-192x192.png'
+                  });
+              }
+          }
+      
+          // Función para actualizar la tabla con las citas
+          function actualizarCitas(citas) {
+              adminTable.innerHTML = '';
+              citas.forEach(cita => {
+                  const row = adminTable.insertRow();
+                  row.innerHTML = `
+                      <td>${cita.turno}</td>
+                      <td>${cita.nombre}</td>
+                      <td>${cita.telefono}</td>
+                      <td>${cita.fecha}</td>
+                      <td>${cita.hora}</td>
+                      <td>
+                          <select class="estado-select ${cita.estado.toLowerCase()}" data-id="${cita.id}">
+                              <option value="Pendiente" ${cita.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                              <option value="Proceso" ${cita.estado === 'Proceso' ? 'selected' : ''}>En Proceso</option>
+                              <option value="Completada" ${cita.estado === 'Completada' ? 'selected' : ''}>Completada</option>
+                          </select>
+                      </td>
+                      <td>
+                          <button class="editar-button" data-id="${cita.id}">Editar</button>
+                          <button class="eliminar-button" data-id="${cita.id}">Eliminar</button>
+                      </td>
+                  `;
+      
+                  // Agregar eventos a los selectores y botones
+                  row.querySelector('.estado-select').addEventListener('change', function () {
+                      registrarActividad();
+                      cambiarEstado(cita.id, this.value, this);
+                  });
+                  row.querySelector('.editar-button').addEventListener('click', () => {
+                      registrarActividad();
+                      abrirModalEditar(cita);
+                  });
+                  row.querySelector('.eliminar-button').addEventListener('click', () => {
+                      registrarActividad();
+                      eliminarCita(cita.id);
+                  });
+              });
+          }
+      
+          // Función para cambiar el estado de una cita
+          function cambiarEstado(id, nuevoEstado, selectElement) {
+              selectElement.disabled = true;
+              fetch('cambiar_estado/', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                      'X-Requested-With': 'XMLHttpRequest'
+                  },
+                  body: JSON.stringify({ id, estado: nuevoEstado }),
+                  credentials: 'same-origin'
+              })
+              .then(response => {
+                  if (!response.ok) {
+                      throw new Error('Error de red: ' + response.status);
+                  }
+                  return response.json();
+              })
+              .then(data => {
+                  if (!data.success) {
+                      alert('No se pudo actualizar el estado.');
+                      cargarCitas();
+                  }
+              })
+              .catch(error => {
+                  console.error('Error al actualizar el estado:', error);
+                  alert('Error al actualizar el estado. Por favor, intente nuevamente.');
+                  cargarCitas();
+              })
+              .finally(() => {
+                  selectElement.disabled = false;
+              });
+          }
+      
+          // Función para abrir el modal de edición
+          function abrirModalEditar(cita) {
+              document.getElementById('editFecha').value = cita.fecha;
+              document.getElementById('editHora').value = cita.hora;
+              document.getElementById('editTurno').value = cita.turno;
+              modal.style.display = 'block';
+              editarCitaForm.dataset.id = cita.id;
+          }
+      
+          // Función para guardar la edición de una cita
+          function guardarEdicion(event) {
+              event.preventDefault();
+              registrarActividad();
+              
+              // Obtener los datos del formulario
+              const id = editarCitaForm.dataset.id;
+              const fecha = document.getElementById('editFecha').value;
+              const hora = document.getElementById('editHora').value;
+              const turno = document.getElementById('editTurno').value;
+      
+              // Verificar que todos los campos estén completos
+              if (!fecha || !hora || !turno) {
+                  alert('Por favor complete todos los campos');
+                  return;
+              }
+      
+              // Mostrar indicador de carga
+              const botonGuardar = event.target.querySelector('.guardar-button');
+              botonGuardar.disabled = true;
+              botonGuardar.innerHTML = 'Guardando...';
+      
+              // Enviar la petición al servidor
+              fetch('editar_cliente/', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                      'X-Requested-With': 'XMLHttpRequest'
+                  },
+                  body: JSON.stringify({
+                      id: id,
+                      fecha: fecha,
+                      hora: hora,
+                      turno: turno
+                  }),
+                  credentials: 'same-origin'
+              })
+              .then(response => {
+                  if (!response.ok) {
+                      throw new Error('Error de red: ' + response.status);
+                  }
+                  return response.json();
+              })
+              .then(data => {
+                  if (data.success) {
+                      // Recargar citas de inmediato
+                      cargarCitas();
+                      cerrarModal();
+                  } else {
+                      alert(data.error || 'Error al guardar los cambios');
+                  }
+              })
+              .catch(error => {
+                  console.error('Error:', error);
+                  alert('Error al guardar los cambios. Por favor, intente nuevamente.');
+              })
+              .finally(() => {
+                  // Restaurar el botón
+                  botonGuardar.disabled = false;
+                  botonGuardar.innerHTML = 'Guardar';
+              });
+          }
+      
+          // Función para eliminar una cita
+          function eliminarCita(id) {
+              if (!confirm('¿Estás seguro de que deseas eliminar esta cita?')) return;
+      
+              fetch('eliminar-cita/', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                      'X-Requested-With': 'XMLHttpRequest'
+                  },
+                  body: JSON.stringify({ id }),
+                  credentials: 'same-origin'
+              })
+              .then(response => {
+                  if (!response.ok) {
+                      throw new Error('Error de red: ' + response.status);
+                  }
+                  return response.json();
+              })
+              .then(data => {
+                  if (data.success) {
+                      cargarCitas();
+                  } else {
+                      alert(data.error || 'No se pudo eliminar la cita.');
+                  }
+              })
+              .catch(error => {
+                  console.error('Error al eliminar la cita:', error);
+                  alert('Error al eliminar la cita. Por favor, intente nuevamente.');
+                  cargarCitas();
+              });
+          }
+      
+          // Función para registrar la actividad del usuario
+          function registrarActividad() {
+              lastActivity = Date.now();
+              if (inactiveMode) {
+                  // Restablecer el intervalo a la frecuencia normal
+                  clearInterval(pollingInterval);
+                  pollingInterval = setInterval(cargarCitas, POLLING_INTERVAL_MS);
+                  inactiveMode = false;
+                  // Verificar sesión y recargar citas inmediatamente
+                  verificarSesion();
+                  cargarCitas();
+              }
+          }
+      
+          // Registrar eventos de actividad en la página
+          ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(eventType => {
+              document.addEventListener(eventType, registrarActividad, { passive: true });
+          });
+      
+          // Verificar inactividad
+          function verificarInactividad() {
+              const ahora = Date.now();
+              if (!inactiveMode && ahora - lastActivity > 60000) { // 1 minuto
+                  // Cambiar a modo inactivo
+                  clearInterval(pollingInterval);
+                  // Usar la función ligera para inactividad
+                  pollingInterval = setInterval(pingServidor, POLLING_INTERVAL_INACTIVE_MS);
+                  inactiveMode = true;
+              }
+          }
+      
+          // Verificar periódicamente si hay inactividad
+          setInterval(verificarInactividad, 30000);
+      
+          // Cerrar modal al hacer clic fuera
+          window.addEventListener('click', function (event) {
+              if (event.target === modal) cerrarModal();
+          });
+      
+          // Asociar evento de guardar al formulario
+          editarCitaForm.addEventListener('submit', guardarEdicion);
+      
+          // Verificar regularmente si la sesión de Django está activa
+          function verificarSesion() {
+              const checkTime = new Date().getTime();
+              fetch(`adminis?t=${checkTime}`, {
+                  headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                  credentials: 'same-origin'
+              })
+              .then(response => {
+                  if (!response.ok) {
+                      // La sesión probablemente expiró
+                      window.location.reload();
+                      return;
+                  }
+                  
+                  const contentType = response.headers.get('content-type');
+                  if (!contentType || !contentType.includes('application/json')) {
+                      // La respuesta no es JSON, recargar la página
+                      window.location.reload();
+                  }
+                  
+                  // Si todo está bien, verificar con el contenido
+                  return response.json().catch(error => {
+                      console.error('Error al parsear JSON:', error);
+                      window.location.reload();
+                  });
+              })
+              .then(data => {
+                  if (data && !data.success) {
+                      // La respuesta indica un problema
+                      window.location.reload();
+                  }
+              })
+              .catch(() => {
+                  // Error de red, podría ser temporal, no recargar aún
+                  console.error('Error de conectividad en verificarSesion');
+              });
+          }
+      
+          // Iniciar el sistema de polling automático
+          function iniciarPolling() {
+              // Cargar las citas inicialmente
+              cargarCitas();
+              
+              // Configurar el polling periódico
+              pollingInterval = setInterval(cargarCitas, POLLING_INTERVAL_MS);
+              
+              // Si la página pierde el foco, reducir la frecuencia para ahorrar recursos
+              document.addEventListener('visibilitychange', function() {
+                  if (document.hidden) {
+                      // Si la página no está visible, reducir frecuencia de polling
+                      clearInterval(pollingInterval);
+                      pollingInterval = setInterval(pingServidor, POLLING_INTERVAL_INACTIVE_MS);
+                  } else {
+                      // Al volver a la página, recargar citas inmediatamente
+                      cargarCitas();
+                      // Reiniciar el polling con la frecuencia normal
+                      clearInterval(pollingInterval);
+                      pollingInterval = setInterval(cargarCitas, POLLING_INTERVAL_MS);
+                      // Registrar actividad
+                      registrarActividad();
+                  }
+              });
+          }
+          
+          // Función para comprobar conectividad y estado de la sesión
+          function comprobarConectividad() {
+              fetch('adminis', {
+                  method: 'HEAD',
+                  headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                  credentials: 'same-origin'
+              })
+              .then(response => {
+                  if (!response.ok) {
+                      // Problemas con la conectividad o la sesión
+                      isSessionExpired = true;
+                      // Mostrar mensaje
+                      const mensajeDiv = document.createElement('div');
+                      mensajeDiv.className = 'mensaje-alerta';
+                      mensajeDiv.innerHTML = `
+                          <div style="position: fixed; bottom: 10px; right: 10px; background-color: #f8d7da; 
+                          color: #721c24; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                              Posible problema de conexión. <button id="btnReconectar">Reconectar</button>
+                          </div>
+                      `;
+                      document.body.appendChild(mensajeDiv);
+                      document.getElementById('btnReconectar').addEventListener('click', function() {
+                          document.body.removeChild(mensajeDiv);
+                          window.location.reload();
+                      });
+                  } else {
+                      isSessionExpired = false;
+                  }
+              })
+              .catch(() => {
+                  // Error de conexión
+                  console.error('Error de conectividad');
+              });
+          }
+          
+          // Comprobar conectividad periódicamente
+          setInterval(comprobarConectividad, 60000); // Cada minuto
+          
+          // Solicitar permiso para notificaciones (opcional)
+          function solicitarPermisoNotificaciones() {
+              if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                  Notification.requestPermission();
+              }
+          }
+          
+          // Iniciar al cargar la página
+          iniciarPolling();
+          solicitarPermisoNotificaciones();
+      });
+      
+      // Código para el manejo del sidebar
+      document.addEventListener('DOMContentLoaded', function () {
+          const sidebar = document.getElementById('sidebar');
+          const sidebarToggle = document.getElementById('sidebarCollapse');
+      
+          sidebarToggle.addEventListener('click', function () {
+              sidebar.classList.toggle('active');
+          });
+      
+          // Código para cerrar sidebar cuando se hace clic fuera
+          document.addEventListener('click', function (event) {
+              // Verificar si el sidebar está activo y el clic no es dentro del sidebar o el botón de toggle
+              if (sidebar.classList.contains('active') && 
+                  !sidebar.contains(event.target) && 
+                  event.target !== sidebarToggle) {
+                  sidebar.classList.remove('active');
+              }
+          });
+      });
+      
+      // Función para manejar errores globales
+      window.addEventListener('error', function(event) {
+          console.error('Error global capturado:', event.error);
+          
+          // Si el error parece ser de conexión o estado, intentar recargar la página
+          if (event.error && (event.error.message.includes('network') || 
+              event.error.message.includes('JSON') ||
+              event.error.message.includes('sesión'))) {
+              
+              const mensajeDiv = document.createElement('div');
+              mensajeDiv.className = 'mensaje-error-global';
+              mensajeDiv.innerHTML = `
+                  <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); 
+                  background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; 
+                  box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10000;">
+                      Se ha producido un error. <button onclick="window.location.reload()">Recargar página</button>
+                  </div>
+              `;
+              document.body.appendChild(mensajeDiv);
+              
+              // Remover después de 10 segundos si el usuario no hace clic
+              setTimeout(() => {
+                  if (document.body.contains(mensajeDiv)) {
+                      document.body.removeChild(mensajeDiv);
+                  }
+              }, 10000);
+          }
+      });
+      
+      // Verificar regularmente si la sesión de Django está activa
+      function verificarSesion() {
+          const checkTime = new Date().getTime();
+          fetch(`adminis?t=${checkTime}`, {
+              headers: { 'X-Requested-With': 'XMLHttpRequest' },
+              credentials: 'same-origin'
+          })
+          .then(response => {
+              if (!response.ok) {
+                  // La sesión probablemente expiró
+                  window.location.reload();
+                  return;
+              }
+              
+              const contentType = response.headers.get('content-type');
+              if (!contentType || !contentType.includes('application/json')) {
+                  // La respuesta no es JSON, recargar la página
+                  window.location.reload();
+                  return;
+              }
+              
+              // Si todo está bien, verificar con el contenido
+              return response.json();
+          })
+          .then(data => {
+              if (!data || !data.success) {
+                  // La respuesta indica un problema
+                  window.location.reload();
+              }
+          })
+          .catch(() => {
+              // Error de red, podría ser temporal
+              console.error('Error de conectividad en verificarSesion global');
+          });
+      }
+      
+      // Verificar la sesión cada 5 minutos
+      setInterval(verificarSesion, 300000);
     </script>
+    
+    <!-- Estilos adicionales para las notificaciones y estados -->
+    <style>
+        .last-update {
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        /* Estilos para los diferentes estados en la tabla */
+        .estado-select.pendiente {
+            background-color: #ffe0e0;
+        }
+        
+        .estado-select.proceso {
+            background-color: #fff0c0;
+        }
+        
+        .estado-select.completada {
+            background-color: #e0ffe0;
+        }
+        
+        /* Animación para nuevas filas (opcional) */
+        @keyframes highlightRow {
+            0% { background-color: rgba(76, 175, 80, 0.3); }
+            100% { background-color: transparent; }
+        }
+        
+        .new-row {
+            animation: highlightRow 2s ease-out;
+        }
+    </style>
 </body>
 </html>

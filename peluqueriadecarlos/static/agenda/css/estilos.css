@@ -16,11 +16,31 @@ body {
     align-items: center;
 } */
 
+
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
+    background: linear-gradient(to right, #0026ff, #0026ff);
+    color: #333;
+    min-height: 100vh;
+   
+    
+}
+ 
+
 .container {
     width: 100%;
     padding: 15px;
     max-width: 900px;
     margin: 0 auto;
+  
 }
 
 h1 {
@@ -152,20 +172,6 @@ button:hover {
 
 
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    font-family: 'Poppins', sans-serif;
-    line-height: 1.6;
-    background: linear-gradient(to right, #0026ff, #0026ff);
-    color: #333;
-    min-height: 100vh;
-}
- 
 /* Layout principal */
 .layout {
     display: flex;
@@ -175,7 +181,7 @@ body {
 /* Estilos del sidebar */
 .sidebar {
     width: 250px;
-    background-color: #1a2035;
+    background-color: #000000;
     color: #fff;
     height: 100%;
     position: fixed;
@@ -205,11 +211,35 @@ body {
 
 .sidebar-menu li a:hover,
 .sidebar-menu li a.active {
-    background-color: #3c1172;
+    background: #FF6B6B;
+    
+   
 }
 
 .sidebar-menu li a i {
     margin-right: 10px;
+}
+
+.sidebar-menu, #agenda a {
+    background: #FF6B6B;
+}
+.sidebar-menu, #citas a {
+    background-color: #000000;
+}
+
+.sidebar-menu, #citas a:hover {
+    background: #FF6B6B;
+   
+   
+}
+
+.sidebar-menu, #login a {
+    background-color: black;
+}
+
+
+.sidebar-menu, #login a:hover {
+    background: #FF6B6B;
 }
 
 /* Contenido principal */
@@ -271,11 +301,18 @@ body {
     max-width: 900px;
     margin: 0 auto;
     padding: 15px;
+  
 }
 
 
-
-
+/* resposiv para table */
+@media (min-width: 1000px) {
+    .container {
+      width: 80%;
+      position: relative;
+      left: 10%;
+    }
+}
 
 
 
@@ -305,8 +342,9 @@ body {
 
 /* Colores de estados */
 .estado-pendiente {
-    background-color: #ffe600 !important; /* Amarillo */
+    /* background-color: #ffe600 !important;  */
     color: #333 !important;
+    
 }
 
 .estado-completado {

@@ -7,6 +7,7 @@
     <title>Peluquería Estilo Moderno - Sistema de Citas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="{% static "agenda/icons/carlosimagen.ico" %}" />
 
     <style>
         * {
@@ -173,6 +174,48 @@
             background-color: #ff6b81;
         }
 
+        /* Formulario para verificar teléfono */
+        .phone-verification {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .phone-verification h3 {
+            margin-bottom: 15px;
+            color: #2d3436;
+        }
+
+        .phone-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .phone-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .phone-input button {
+            background-color: #0026ff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .phone-input button:hover {
+            background-color: #001cb3;
+        }
+
         @media (max-width: 768px) {
             .sidebar-toggle {
                 display: block;
@@ -264,6 +307,17 @@
 
         <div class="content">
             <h1>Carlos Barber Shop</h1>
+            
+            <!-- Formulario para verificar teléfono -->
+            <div class="phone-verification">
+                <h3>Verifica tu teléfono para gestionar tus citas</h3>
+                <div class="phone-input">
+                    <input type="tel" id="phoneInput" placeholder="Ingresa tu número de teléfono" pattern="[0-9]{10}" maxlength="10" required>
+                    <button id="verifyPhone">Verificar</button>
+                </div>
+                <p id="verificationStatus"></p>
+            </div>
+            
             <div class="appointments-list">
                 <h2>Citas Programadas</h2>
                 <div class="table-responsive">
@@ -280,20 +334,17 @@
                         </thead>
                         <tbody id="citasContainer">
                             {% for cita in citas %}
-                            <tr>
+                            <tr data-cita-id="{{ cita.id }}" data-phone="{{ cita.telefono }}">
                                 <td>{{ cita.turno }}</td>
                                 <td>{{ cita.nombre }}</td>
                                 <td>{{ cita.fecha }}</td>
                                 <td>{{ cita.hora }}</td>
                                 <td>{{ cita.estado }}</td>
                                 <td>
-                                    {% if cita.usuario_id == request.user.id %}
-                                        <button class="btn-cancelar" onclick="cancelarCita({{ cita.id }})">
-                                            Cancelar cita
-                                        </button>
-                                    {% else %}
-                                        <span style="color: gray;">No disponible</span>
-                                    {% endif %}
+                                    <button class="btn-cancelar" style="display: none;">
+                                        Cancelar cita
+                                    </button>
+                                    <span class="no-permiso" style="color: gray;">No disponible</span>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -309,6 +360,16 @@
             const sidebar = document.getElementById('sidebar');
             const sidebarCollapse = document.getElementById('sidebarCollapse');
             const overlay = document.getElementById('overlay');
+            const phoneInput = document.getElementById('phoneInput');
+            const verifyButton = document.getElementById('verifyPhone');
+            const verificationStatus = document.getElementById('verificationStatus');
+            
+            // Verificar si hay un teléfono guardado en localStorage
+            const savedPhone = localStorage.getItem('clientPhone');
+            if (savedPhone) {
+                phoneInput.value = savedPhone;
+                verifyPhone(savedPhone);
+            }
         
             function toggleSidebar() {
                 sidebar.classList.toggle('active');
@@ -337,20 +398,71 @@
             sidebar.addEventListener('click', function(e) {
                 e.stopPropagation();
             });
-        });
-        
-        function cancelarCita(id) {
-            if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
-                // Obtener el token de la URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const token = urlParams.get('token');
-                
-                // Verificar si tenemos el token
-                if (!token) {
-                    alert('No tienes permiso para cancelar esta cita');
+            
+            // Función para verificar el teléfono
+            function verifyPhone(phone) {
+                if (!phone || !/^\d{10}$/.test(phone)) {
+                    verificationStatus.textContent = "Por favor, ingresa un número de teléfono válido de 10 dígitos.";
+                    verificationStatus.style.color = "red";
                     return;
                 }
+                
+                // Guardar teléfono en localStorage para futuras visitas
+                localStorage.setItem('clientPhone', phone);
+                
+                // Mostrar botones de cancelar solo para citas del cliente
+                const rows = document.querySelectorAll('#citasContainer tr');
+                let foundCitas = false;
+                
+                rows.forEach(row => {
+                    const rowPhone = row.getAttribute('data-phone');
+                    const citaId = row.getAttribute('data-cita-id');
+                    const cancelButton = row.querySelector('.btn-cancelar');
+                    const noPermiso = row.querySelector('.no-permiso');
+                    
+                    if (rowPhone === phone) {
+                        foundCitas = true;
+                        cancelButton.style.display = 'block';
+                        noPermiso.style.display = 'none';
+                        
+                        // Configurar el evento para cancelar cita
+                        cancelButton.onclick = function() {
+                            cancelarCita(citaId, phone);
+                        };
+                    } else {
+                        cancelButton.style.display = 'none';
+                        noPermiso.style.display = 'block';
+                    }
+                });
+                
+                if (foundCitas) {
+                    verificationStatus.textContent = "Teléfono verificado. Ahora puedes gestionar tus citas.";
+                    verificationStatus.style.color = "green";
+                } else {
+                    verificationStatus.textContent = "No se encontraron citas asociadas a este número.";
+                    verificationStatus.style.color = "orange";
+                }
+            }
+            
+            // Evento para verificar teléfono
+            verifyButton.addEventListener('click', function() {
+                verifyPhone(phoneInput.value);
+            });
+            
+            // También verificar cuando presionen Enter
+            phoneInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    verifyPhone(phoneInput.value);
+                }
+            });
+        });
         
+        function cancelarCita(id, phone) {
+            if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
+                // Generar token basado en número de teléfono
+                const salt = "CarlosBarberShop2025";
+                const token = generateToken(phone, salt);
+                
                 fetch(`/cancelar_cita/${id}/?token=${token}`, {
                     method: 'POST',
                     headers: {
@@ -376,6 +488,24 @@
                     alert('Error al cancelar la cita');
                 });
             }
+        }
+        
+        // Función para generar token similar a como se hace en el modelo
+        function generateToken(phone, salt) {
+            // Esta es una implementación simplificada
+            // En un entorno real, deberías usar una función hash más segura
+            const tokenString = `${phone}${salt}`;
+            
+            // Convertir a hash (versión simple para el cliente)
+            let hash = 0;
+            for (let i = 0; i < tokenString.length; i++) {
+                const char = tokenString.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convertir a entero de 32 bits
+            }
+            
+            // Convertir a string hexadecimal
+            return Math.abs(hash).toString(16);
         }
     </script>
 </body>

@@ -4,11 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Peluquería Estilo Moderno - Sistema de Citas</title>
+    <title>Carlos Barber Shop</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'agenda/css/estilos.css' %}">
     <link rel="manifest" href="{% static 'agenda/manifest.json' %}">
+    <link rel="icon" type="image/x-icon" href="{% static "agenda/icons/carlosimagen.ico" %}" />
 
 </head>
 <body>
@@ -22,9 +23,9 @@
                 <h3>Panel de Control</h3>
             </div>
             <ul class="sidebar-menu">
-                <li><a href="" id="clientesLink"><i class="fas fa-pencil-alt"></i>Agendar Citas</a></li>
-                <li><a href="{% url 'citas' %}" class="active"><i class="fas fa-calendar-alt"></i> Cistas Agendas </a></li>
-                <li><a href="{% url 'iniciosesion' %}" class="active"><i class="fas fa-sign-in-alt"></i>Login</a></li>
+                <li id="agenda"><a href="#" id="clientesLink"><i class="fas fa-pencil-alt"></i>Agendar Citas</a></li>
+                <li id="citas"><a href="{% url 'citas' %}" class="active"><i class="fas fa-calendar-alt"></i> Cistas Agendas </a></li>
+                <li id="login"><a href="{% url 'iniciosesion' %}"  class="active"><i class="fas fa-sign-in-alt"></i>Login</a></li>
             </ul>
         </nav>
 
@@ -53,14 +54,14 @@
                 
                     <label for="hora">Hora:</label>
 <select id="hora" name="hora" required>
-    <option value="">Selecciona una horas</option>
+    <option value="">Selecciona una hora</option>
     {% for hora in horas_no_disponibles %}
         <option value="{{ hora|time:'h:i A' }}">{{ hora|time:'h:i A' }}</option>
     {% endfor %}
 </select>
 
                     
-                    <button type="submit">Reservar Cita45</button>
+                    <button type="submit">Reservar Cita</button>
                 </form>
                 
             </div>

@@ -13,6 +13,8 @@ from .models import HorarioNoDisponible
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
+import hashlib
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -231,7 +233,14 @@ def eliminar_cita(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
 
+# parte del administrador
+@login_required(login_url='iniciosesion')  # Decorador que redirige a 'iniciosesion' si no está autenticado
 def adminis(request):
+    # Verificar si es superusuario, si no lo es, redirigir
+    if not request.user.is_superuser:
+        messages.error(request, "No tienes permisos para acceder a esta página.")
+        return redirect('iniciosesion')
+    
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         # Fetch all appointments
         citas = list(Cliente.objects.values(
@@ -260,6 +269,7 @@ def adminis(request):
         ]
         
         return JsonResponse({'success': True, 'citas': citas_list})
+    
     return render(request, 'agenda/adminis.html')
 
 
@@ -390,18 +400,21 @@ def guardar_horario(request):
 
 
 
+
 @require_http_methods(["GET"])
 def citas(request):
     token = request.GET.get('token', '')
-    
+
+    # Obtener citas ordenadas por fecha y hora
     citas = Cliente.objects.values(
-        'id', 'nombre', 'telefono', 'fecha', 'hora', 'estado', 'turno', 'token'
+        'id', 'nombre', 'telefono', 'fecha', 'hora', 'estado', 'token'
     ).order_by('fecha', 'hora')
 
+    # Asignar turnos en orden secuencial
     citas_list = [
         {
             'id': cita['id'],
-            'turno': cita['turno'],
+            'turno': i + 1,  # Asignar turno de forma continua
             'nombre': cita['nombre'],
             'telefono': cita['telefono'],
             'fecha': cita['fecha'].strftime('%Y-%m-%d'),
@@ -409,13 +422,14 @@ def citas(request):
             'estado': cita['estado'],
             'can_cancel': cita['token'] == token
         }
-        for cita in citas
+        for i, cita in enumerate(citas)
     ]
-    
+
     return render(request, 'agenda/citas.html', {
         'citas': citas_list,
         'current_token': token
     })
+
 
 @csrf_exempt
 def guardar_cita(request):
@@ -473,29 +487,43 @@ def guardar_cita(request):
 @csrf_exempt
 def cancelar_cita(request, cita_id):
     token = request.GET.get('token', '')
+    device_id = request.GET.get('device_id', '')
     cita = get_object_or_404(Cliente, id=cita_id)
-
+    
+    # Verificar si coincide el token
     if cita.token != token:
         return JsonResponse({'error': 'No tienes permiso para cancelar esta cita'}, status=403)
-
+    
+    # Verificar adicionalmente si el device_id coincide
+    if cita.device_id and cita.device_id != device_id:
+        return JsonResponse({'error': 'Esta cita fue creada desde otro dispositivo'}, status=403)
+    
     cita.delete()
     return JsonResponse({'message': 'Cita cancelada correctamente'})
 
 
-
-
-def iniciosesion(request):  # Cambié de "login" a "login_view"
+def iniciosesion(request):
+    # Verificar si el usuario ya está autenticado
+    if request.user.is_authenticated and request.user.is_superuser:
+        # Si ya está autenticado y es superusuario, redirigir directamente a adminis
+        return redirect("adminis")
+    
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
-
         user = authenticate(request, username=username, password=password)
-
+        
         if user is not None and user.is_superuser:
-            login(request, user)  # Aquí sigue usando la función `login` de Django
-            return redirect("adminis")  # Reemplaza con tu URL
-
+            login(request, user)
+            
+            # Establecer una cookie de sesión más duradera si el usuario marca "recordarme"
+            # (necesitarás agregar esta casilla en tu formulario HTML)
+            if request.POST.get("remember_me", False):
+                # Configurar que la sesión dure 30 días en lugar del valor predeterminado
+                request.session.set_expiry(2592000)  # 30 días en segundos
+            
+            return redirect("adminis")
         else:
             messages.error(request, "Usuario o contraseña incorrectos.")
-
+    
     return render(request, "agenda/iniciosesion.html")
