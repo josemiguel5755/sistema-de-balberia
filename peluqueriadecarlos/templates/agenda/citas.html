@@ -310,7 +310,7 @@
             
             <!-- Formulario para verificar teléfono -->
             <div class="phone-verification">
-                <h3>Elimina tu Cita introduciondo tu numero de telefono</h3>
+                <h3>Elimina tu Cita introduciendo tu número de teléfono</h3>
                 <div class="phone-input">
                     <input type="tel" id="phoneInput" placeholder="Ingresa tu número de teléfono" pattern="[0-9]{10}" maxlength="10" required>
                     <button id="verifyPhone">Verificar</button>
@@ -459,7 +459,13 @@
         
         function cancelarCita(id, phone) {
             if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
-                fetch(`cancelar_cita/${id}/`, {
+                // Obtener la URL base del sitio
+                const baseUrl = window.location.origin;
+                
+                // Construir la URL completa para la cancelación
+                const cancelUrl = `${baseUrl}/cancelar_cita/${id}/`;
+                
+                fetch(cancelUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -485,7 +491,7 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert(error.message || 'Error al cancelar la cita');
+                    alert(`Error al cancelar la cita: ${error.message || 'Hubo un problema de conexión con el servidor'}`);
                 });
             }
         }
@@ -513,23 +519,6 @@
             }
             
             return csrfToken;
-        }
-        // Función para generar token similar a como se hace en el modelo
-        function generateToken(phone, salt) {
-            // Esta es una implementación simplificada
-            // En un entorno real, deberías usar una función hash más segura
-            const tokenString = `${phone}${salt}`;
-            
-            // Convertir a hash (versión simple para el cliente)
-            let hash = 0;
-            for (let i = 0; i < tokenString.length; i++) {
-                const char = tokenString.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash; // Convertir a entero de 32 bits
-            }
-            
-            // Convertir a string hexadecimal
-            return Math.abs(hash).toString(16);
         }
     </script>
 </body>
