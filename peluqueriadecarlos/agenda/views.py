@@ -484,22 +484,45 @@ def guardar_cita(request):
 
     return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
 
+
 @csrf_exempt
 def cancelar_cita(request, cita_id):
-    token = request.GET.get('token', '')
-    device_id = request.GET.get('device_id', '')
-    cita = get_object_or_404(Cliente, id=cita_id)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
     
-    # Verificar si coincide el token
-    if cita.token != token:
-        return JsonResponse({'error': 'No tienes permiso para cancelar esta cita'}, status=403)
-    
-    # Verificar adicionalmente si el device_id coincide
-    if cita.device_id and cita.device_id != device_id:
-        return JsonResponse({'error': 'Esta cita fue creada desde otro dispositivo'}, status=403)
-    
-    cita.delete()
-    return JsonResponse({'message': 'Cita cancelada correctamente'})
+    try:
+        # Verificar que haya datos en el cuerpo
+        if not request.body:
+            return JsonResponse({'error': 'No se enviaron datos'}, status=400)
+            
+        try:
+            data = json.loads(request.body)
+            telefono = data.get('telefono')
+            
+            if not telefono:
+                return JsonResponse({'error': 'Teléfono no proporcionado'}, status=400)
+            
+            # Intentar encontrar la cita
+            try:
+                cita = get_object_or_404(Cliente, id=cita_id)
+            except:
+                return JsonResponse({'error': f'No se encontró la cita con ID {cita_id}'}, status=404)
+            
+            # Verificar que el teléfono coincida con el de la cita
+            if cita.telefono != telefono:
+                return JsonResponse({'error': 'No tienes permiso para cancelar esta cita'}, status=403)
+            
+            # Eliminar la cita
+            cita.delete()
+            return JsonResponse({'message': 'Cita cancelada correctamente'})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Datos JSON inválidos'}, status=400)
+            
+    except Exception as e:
+        return JsonResponse({'error': f'Error al procesar la solicitud: {str(e)}'}, status=500)
+
+
 
 
 def iniciosesion(request):

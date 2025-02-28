@@ -310,7 +310,7 @@
             
             <!-- Formulario para verificar teléfono -->
             <div class="phone-verification">
-                <h3>Verifica tu teléfono para gestionar tus citas</h3>
+                <h3>Elimina tu Cita introduciondo tu numero de telefono</h3>
                 <div class="phone-input">
                     <input type="tel" id="phoneInput" placeholder="Ingresa tu número de teléfono" pattern="[0-9]{10}" maxlength="10" required>
                     <button id="verifyPhone">Verificar</button>
@@ -459,19 +459,21 @@
         
         function cancelarCita(id, phone) {
             if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
-                // Generar token basado en número de teléfono
-                const salt = "CarlosBarberShop2025";
-                const token = generateToken(phone, salt);
-                
-                fetch(`/cancelar_cita/${id}/?token=${token}`, {
+                fetch(`cancelar_cita/${id}/`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
-                    }
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({
+                        telefono: phone
+                    })
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Error en la respuesta del servidor');
+                        return response.json().then(data => {
+                            throw new Error(data.error || 'Error en la respuesta del servidor');
+                        });
                     }
                     return response.json();
                 })
@@ -479,17 +481,39 @@
                     if (data.message) {
                         alert(data.message);
                         location.reload(); // Recargar la página para actualizar la lista
-                    } else if (data.error) {
-                        alert(data.error);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error al cancelar la cita');
+                    alert(error.message || 'Error al cancelar la cita');
                 });
             }
         }
         
+        // Función para obtener el token CSRF de las cookies
+        function getCsrfToken() {
+            let csrfToken = null;
+            
+            // Intentar obtener el token de las cookies
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith('csrftoken=')) {
+                    csrfToken = cookie.substring('csrftoken='.length);
+                    break;
+                }
+            }
+            
+            // Si no está en cookies, intentar obtenerlo de un elemento meta
+            if (!csrfToken) {
+                const metaTag = document.querySelector('meta[name="csrf-token"]');
+                if (metaTag) {
+                    csrfToken = metaTag.getAttribute('content');
+                }
+            }
+            
+            return csrfToken;
+        }
         // Función para generar token similar a como se hace en el modelo
         function generateToken(phone, salt) {
             // Esta es una implementación simplificada
