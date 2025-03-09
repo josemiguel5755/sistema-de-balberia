@@ -233,6 +233,8 @@ def eliminar_cita(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
 
+# parte del administrador
+@login_required(login_url='iniciosesion')  # Decorador que redirige a 'iniciosesion' si no está autenticado
 def adminis(request):
     # Verificar si es superusuario, si no lo es, redirigir
     if not request.user.is_superuser:
@@ -252,7 +254,7 @@ def adminis(request):
         for idx, cita in enumerate(citas, 1):
             cita['turno'] = idx
         
-        # Prepare the list for JSON response
+        
         citas_list = [
             {
                 'id': cita['id'],
@@ -269,7 +271,6 @@ def adminis(request):
         return JsonResponse({'success': True, 'citas': citas_list})
     
     return render(request, 'agenda/adminis.html')
-
 
 
 @csrf_exempt
