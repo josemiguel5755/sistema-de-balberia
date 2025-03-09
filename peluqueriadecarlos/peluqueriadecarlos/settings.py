@@ -210,6 +210,6 @@ SESSION_SAVE_EVERY_REQUEST = True  # Actualiza la cookie de sesión en cada soli
 # SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 
 # Configuraciones de seguridad para las cookies
-SESSION_COOKIE_SECURE = True  # Solo enviar cookies a través de HTTPS (recomendado en producción)
+SESSION_COOKIE_SECURE = False  # Solo enviar cookies a través de HTTPS (recomendado en producción)
 SESSION_COOKIE_HTTPONLY = True  # Evitar acceso a las cookies desde JavaScript
 LOGIN_REDIRECT_URL = "adminis/"
