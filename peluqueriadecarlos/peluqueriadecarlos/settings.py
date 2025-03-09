@@ -203,13 +203,13 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # Configuración de sesiones
-SESSION_COOKIE_AGE = 86400  # Duración predeterminada de la sesión en segundos (1 día)
-SESSION_SAVE_EVERY_REQUEST = True  # Actualiza la cookie de sesión en cada solicitud
+#SESSION_COOKIE_AGE = 86400  # Duración predeterminada de la sesión en segundos (1 día)
+#SESSION_SAVE_EVERY_REQUEST = True  # Actualiza la cookie de sesión en cada solicitud
 
 # Si quieres usar cookies de sesión basadas en el navegador sin utilizar la base de datos
 # SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 
 # Configuraciones de seguridad para las cookies
-SESSION_COOKIE_SECURE = False  # Solo enviar cookies a través de HTTPS (recomendado en producción)
-SESSION_COOKIE_HTTPONLY = True  # Evitar acceso a las cookies desde JavaScript
-LOGIN_REDIRECT_URL = "adminis/"
+#SESSION_COOKIE_SECURE = False  # Solo enviar cookies a través de HTTPS (recomendado en producción)
+#SESSION_COOKIE_HTTPONLY = True  # Evitar acceso a las cookies desde JavaScript
+#LOGIN_REDIRECT_URL = "adminis/"
