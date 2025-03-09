@@ -212,4 +212,4 @@ SESSION_SAVE_EVERY_REQUEST = True  # Actualiza la cookie de sesión en cada soli
 # Configuraciones de seguridad para las cookies
 SESSION_COOKIE_SECURE = True  # Solo enviar cookies a través de HTTPS (recomendado en producción)
 SESSION_COOKIE_HTTPONLY = True  # Evitar acceso a las cookies desde JavaScript
-LOGIN_REDIRECT_URL = "/adminis"
+LOGIN_REDIRECT_URL = "adminis"
